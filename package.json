@@ -1,9 +1,12 @@
 {
   "name": "typeforge",
   "version": "0.1.0",
-  "description": "A modern TypeScript project scaffolding tool",
+  "description": "A modern TypeScript project scaffolding CLI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "typeforge": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -11,10 +14,16 @@
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
-  "keywords": ["typescript", "scaffold", "cli"],
+  "keywords": [
+    "typescript",
+    "scaffold",
+    "cli",
+    "generator"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^25.9.0",
     "typescript": "^5.0.0"
   }
 }

@@ -1,12 +1,7 @@
 #!/usr/bin/env node
-/**
- * TypeForge - Main entry point
- */
+import { runCli } from './cli.js';
 
-export function greet(name: string): string {
-  return `Hello from TypeForge, ${name}!`;
-}
-
-if (require.main === module) {
-  console.log(greet("World"));
-}
+runCli(process.argv).catch((err: Error) => {
+  console.error(err.message);
+  process.exit(1);
+});
