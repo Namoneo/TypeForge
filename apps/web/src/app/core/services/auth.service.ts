@@ -39,6 +39,14 @@ export class AuthService {
     this.router.navigate(['/auth/login']);
   }
 
+  forgotPassword(email: string) {
+    return this.http.post('/api/auth/forgot-password', { email });
+  }
+
+  resetPassword(token: string, newPassword: string) {
+    return this.http.post('/api/auth/reset-password', { token, newPassword });
+  }
+
   clearSession() {
     this.store.clearAuth();
     localStorage.removeItem('tf_refresh');

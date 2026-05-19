@@ -48,6 +48,19 @@ const STRICT_OPTIONS: ts.CompilerOptions = {
 
 const SANDBOX_TIMEOUT_MS = 2000;
 const SANDBOX_MEMORY_MB = 64;
+const MAX_CODE_BYTES = 64 * 1024;       // 64 KB source limit
+const MAX_TEST_INPUT_BYTES = 4 * 1024;  // 4 KB per test input
+
+// Patterns that must never appear in admin-authored test inputs.
+// The sandbox already isolates execution, but these add a defence-in-depth
+// layer against prototype pollution and node: module access.
+const BLOCKED_TEST_INPUT_PATTERNS = [
+  /require\s*\(/,
+  /process\s*\./,
+  /global\s*\[/,
+  /__proto__/,
+  /constructor\s*\[/,
+];
 
 @Injectable()
 export class CompilerService {
@@ -112,6 +125,17 @@ export class CompilerService {
   }
 
   async runChallenge(code: string, testCases: TestCase[]): Promise<ChallengeRunResult> {
+    if (Buffer.byteLength(code, 'utf8') > MAX_CODE_BYTES) {
+      return {
+        passed: false, score: 0,
+        errors: ['Source code exceeds 64 KB limit'],
+        testResults: testCases.map(tc => ({
+          description: tc.description, passed: false,
+          expected: tc.expected, error: 'Source too large',
+        })),
+      };
+    }
+
     const compileResult = this.compile(code);
     if (!compileResult.success || !compileResult.compiledJs) {
       return {
@@ -137,7 +161,25 @@ export class CompilerService {
         continue;
       }
 
-      const result = await this.runInSandbox(compileResult.compiledJs, tc.input);
+      const input = tc.input!;
+
+      if (Buffer.byteLength(input, 'utf8') > MAX_TEST_INPUT_BYTES) {
+        testResults.push({
+          description: tc.description, passed: false,
+          expected: tc.expected, error: 'Test input exceeds 4 KB limit',
+        });
+        continue;
+      }
+
+      if (BLOCKED_TEST_INPUT_PATTERNS.some(re => re.test(input))) {
+        testResults.push({
+          description: tc.description, passed: false,
+          expected: tc.expected, error: 'Test input contains disallowed pattern',
+        });
+        continue;
+      }
+
+      const result = await this.runInSandbox(compileResult.compiledJs, input);
 
       if (result.error) {
         testResults.push({

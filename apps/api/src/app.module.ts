@@ -10,6 +10,7 @@ import { ChallengesModule } from './challenges/challenges.module';
 import { CompilerModule } from './compiler/compiler.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { AiMentorModule } from './ai-mentor/ai-mentor.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AiMentorModule } from './ai-mentor/ai-mentor.module';
     CompilerModule,
     GatewayModule,
     AiMentorModule,
+    HealthModule,
   ],
   providers: [
     {

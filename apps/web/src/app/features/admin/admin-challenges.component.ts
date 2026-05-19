@@ -200,7 +200,7 @@ const EMPTY_FORM = (): CreateChallengePayload => ({
 
           <div>
             <label class="block text-xs font-medium mb-1" style="color: var(--text-muted)">Tags (comma-separated)</label>
-            <input [ngModel]="form.tags.join(', ')" (ngModelChange)="form.tags = $event.split(',').map(t => t.trim()).filter(Boolean)"
+            <input [ngModel]="form.tags.join(', ')" (ngModelChange)="form.tags = $event.split(',').map(t => t.trim()).filter(t => t !== '')"
                    name="tags"
                    class="w-full px-3 py-2 rounded-lg text-sm border outline-none"
                    style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary)">

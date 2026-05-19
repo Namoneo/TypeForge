@@ -1,9 +1,11 @@
+import * as Sentry from '@sentry/node';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
+import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -12,6 +14,14 @@ function requireEnv(key: string): string {
 }
 
 async function bootstrap() {
+  if (process.env.SENTRY_DSN) {
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV ?? 'development',
+      tracesSampleRate: 0.2,
+    });
+  }
+
   // Fail fast on missing env vars before binding any port
   const frontendUrl = process.env.NODE_ENV === 'production'
     ? requireEnv('FRONTEND_URL')
@@ -41,6 +51,8 @@ async function bootstrap() {
   }));
 
   app.setGlobalPrefix('api');
+
+  app.useGlobalFilters(new SentryExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),

@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 
 const mockUser = {
   id: 'user-1',
@@ -15,6 +16,7 @@ const mockUser = {
   level: 1,
   streak: 0,
   refreshToken: null,
+  refreshTokenVersion: 3,
   lastActive: new Date(),
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -38,6 +40,10 @@ const mockConfig = {
   get: jest.fn((key: string, fallback?: string) => fallback ?? 'test-value'),
 };
 
+const mockMail = {
+  sendPasswordReset: jest.fn().mockResolvedValue(undefined),
+};
+
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -50,6 +56,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwt },
         { provide: ConfigService, useValue: mockConfig },
+        { provide: MailService, useValue: mockMail },
       ],
     }).compile();
 
@@ -115,7 +122,7 @@ describe('AuthService', () => {
   });
 
   describe('refresh()', () => {
-    it('issues new tokens when refresh token matches', async () => {
+    it('issues new tokens when refresh token and version match', async () => {
       const bcrypt = await import('bcrypt');
       const raw = 'raw-refresh-token';
       const hashed = await bcrypt.hash(raw, 10);
@@ -123,34 +130,56 @@ describe('AuthService', () => {
       mockPrisma.user.update.mockResolvedValue(mockUser);
       mockPrisma.user.findUniqueOrThrow.mockResolvedValue(mockUser);
 
-      const result = await service.refresh('user-1', raw);
+      // Pass the same tokenVersion that is in mockUser (3)
+      const result = await service.refresh('user-1', raw, mockUser.refreshTokenVersion);
       expect(result.accessToken).toBeDefined();
     });
 
     it('throws UnauthorizedException when refresh token is null', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, refreshToken: null });
 
-      await expect(service.refresh('user-1', 'any-token')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh('user-1', 'any-token', mockUser.refreshTokenVersion)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('throws UnauthorizedException when refresh token does not match', async () => {
       const bcrypt = await import('bcrypt');
       const hashed = await bcrypt.hash('correct-token', 10);
       mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, refreshToken: hashed });
+      mockPrisma.user.update.mockResolvedValue(mockUser);
 
-      await expect(service.refresh('user-1', 'wrong-token')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh('user-1', 'wrong-token', mockUser.refreshTokenVersion)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('throws UnauthorizedException and clears tokens when tokenVersion is stale (reuse detected)', async () => {
+      const bcrypt = await import('bcrypt');
+      const raw = 'raw-refresh-token';
+      const hashed = await bcrypt.hash(raw, 10);
+      // DB has version 3, but the presented JWT carries version 2 (stale/rotated token)
+      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, refreshToken: hashed, refreshTokenVersion: 3 });
+      mockPrisma.user.update.mockResolvedValue(mockUser);
+
+      await expect(service.refresh('user-1', raw, 2)).rejects.toThrow(UnauthorizedException);
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { refreshToken: null, refreshTokenVersion: 0 },
+      });
     });
   });
 
   describe('logout()', () => {
-    it('clears the refresh token', async () => {
+    it('clears the refresh token and resets the token version', async () => {
       mockPrisma.user.update.mockResolvedValue(mockUser);
 
       await service.logout('user-1');
 
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: 'user-1' },
-        data: { refreshToken: null },
+        data: { refreshToken: null, refreshTokenVersion: 0 },
       });
     });
   });

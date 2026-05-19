@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MonacoEditorComponent } from '../../shared/components/monaco-editor/monaco-editor.component';
 import { AiMentorPanelComponent } from '../../shared/components/ai-mentor/ai-mentor-panel.component';
 import { ChallengeService, Challenge, SubmitResult } from '../../core/services/challenge.service';
+import type { Diagnostic } from '../../core/services/compiler.service';
 import { AppStore } from '../../core/store/app.store';
 import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
 
@@ -188,7 +189,7 @@ export class ChallengeDetailComponent implements OnInit {
   result = signal<SubmitResult | null>(null);
   code = signal('');
   leftTab = signal<'description' | 'mentor'>('description');
-  submitErrors = signal<{ code: number; message: string; line?: number; column?: number }[]>([]);
+  submitErrors = signal<Diagnostic[]>([]);
   toastMessage = signal<string | null>(null);
 
   difficultyColor(d: string) { return DIFFICULTY_COLORS[d] ?? '#888'; }
