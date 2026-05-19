@@ -2,6 +2,7 @@ import { Component, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MonacoEditorComponent } from '../../shared/components/monaco-editor/monaco-editor.component';
+import { AiMentorPanelComponent } from '../../shared/components/ai-mentor/ai-mentor-panel.component';
 import { CompilerService, Diagnostic } from '../../core/services/compiler.service';
 
 const STARTER = `// TypeForge Playground — real TypeScript compiler, live diagnostics
@@ -33,7 +34,7 @@ console.log('Hello from TypeForge!');
 @Component({
   selector: 'tf-playground',
   standalone: true,
-  imports: [CommonModule, FormsModule, MonacoEditorComponent],
+  imports: [CommonModule, FormsModule, MonacoEditorComponent, AiMentorPanelComponent],
   template: `
     <div class="flex flex-col h-screen" style="background: var(--bg-base)">
       <!-- Toolbar -->
@@ -54,6 +55,14 @@ console.log('Hello from TypeForge!');
                 style="border-color: var(--border); color: var(--text-secondary)">
           Reset
         </button>
+        <!-- AI Mentor toggle -->
+        <button (click)="rightPanel.set(rightPanel() === 'mentor' ? 'output' : 'mentor')"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors"
+                [style.background]="rightPanel() === 'mentor' ? 'var(--accent)' : 'transparent'"
+                [style.color]="rightPanel() === 'mentor' ? 'white' : 'var(--text-secondary)'"
+                [style.borderColor]="rightPanel() === 'mentor' ? 'var(--accent)' : 'var(--border)'">
+          ✦ AI Mentor
+        </button>
       </div>
 
       <!-- Main split pane -->
@@ -65,52 +74,62 @@ console.log('Hello from TypeForge!');
           </tf-monaco-editor>
         </div>
 
-        <!-- Output panel (right) -->
+        <!-- Right panel (output or mentor) -->
         <div class="w-80 shrink-0 border-l flex flex-col"
              style="background: var(--bg-surface); border-color: var(--border)">
-          <!-- Status bar -->
-          <div class="flex items-center gap-2 px-3 py-2 border-b text-xs"
-               style="border-color: var(--border)">
-            @if (compiler.lastResult(); as r) {
-              <span class="w-2 h-2 rounded-full"
-                    [style.background]="r.success ? 'var(--success)' : 'var(--danger)'"></span>
-              <span [style.color]="r.success ? 'var(--success)' : 'var(--danger)'">
-                {{ r.success ? 'No errors' : r.errors.length + ' error(s)' }}
-              </span>
-              <span class="ml-auto" style="color: var(--text-muted)">{{ r.elapsed }}ms</span>
-            } @else {
-              <span style="color: var(--text-muted)">Ready — press ▶ Run</span>
-            }
-          </div>
 
-          <!-- Diagnostics -->
-          <div class="flex-1 overflow-auto p-3 space-y-2">
-            @if (compiler.lastResult(); as r) {
-              @for (err of r.errors; track $index) {
-                <div class="rounded-md p-2 text-xs border"
-                     style="background: #ef444410; border-color: #ef444440; color: var(--danger)">
-                  <div class="font-mono">TS{{ err.code }}</div>
-                  <div class="mt-0.5 leading-relaxed" style="color: var(--text-primary)">{{ err.message }}</div>
-                  @if (err.line) {
-                    <div class="mt-1" style="color: var(--text-muted)">Line {{ err.line }}, col {{ err.column }}</div>
-                  }
-                </div>
+          @if (rightPanel() === 'output') {
+            <!-- Status bar -->
+            <div class="flex items-center gap-2 px-3 py-2 border-b text-xs"
+                 style="border-color: var(--border)">
+              @if (compiler.lastResult(); as r) {
+                <span class="w-2 h-2 rounded-full"
+                      [style.background]="r.success ? 'var(--success)' : 'var(--danger)'"></span>
+                <span [style.color]="r.success ? 'var(--success)' : 'var(--danger)'">
+                  {{ r.success ? 'No errors' : r.errors.length + ' error(s)' }}
+                </span>
+                <span class="ml-auto" style="color: var(--text-muted)">{{ r.elapsed }}ms</span>
+              } @else {
+                <span style="color: var(--text-muted)">Ready — press ▶ Run</span>
               }
-              @for (w of r.warnings; track $index) {
-                <div class="rounded-md p-2 text-xs border"
-                     style="background: #f59e0b10; border-color: #f59e0b40; color: var(--warning)">
-                  <div class="font-mono">TS{{ w.code }}</div>
-                  <div class="mt-0.5" style="color: var(--text-primary)">{{ w.message }}</div>
-                </div>
+            </div>
+
+            <!-- Diagnostics -->
+            <div class="flex-1 overflow-auto p-3 space-y-2">
+              @if (compiler.lastResult(); as r) {
+                @for (err of r.errors; track $index) {
+                  <div class="rounded-md p-2 text-xs border"
+                       style="background: #ef444410; border-color: #ef444440; color: var(--danger)">
+                    <div class="font-mono">TS{{ err.code }}</div>
+                    <div class="mt-0.5 leading-relaxed" style="color: var(--text-primary)">{{ err.message }}</div>
+                    @if (err.line) {
+                      <div class="mt-1" style="color: var(--text-muted)">Line {{ err.line }}, col {{ err.column }}</div>
+                    }
+                  </div>
+                }
+                @for (w of r.warnings; track $index) {
+                  <div class="rounded-md p-2 text-xs border"
+                       style="background: #f59e0b10; border-color: #f59e0b40; color: var(--warning)">
+                    <div class="font-mono">TS{{ w.code }}</div>
+                    <div class="mt-0.5" style="color: var(--text-primary)">{{ w.message }}</div>
+                  </div>
+                }
+                @if (r.success && r.errors.length === 0 && r.warnings.length === 0) {
+                  <div class="text-xs p-2 rounded-md"
+                       style="background: #22c55e10; color: var(--success)">
+                    ✓ Compilation successful — {{ r.elapsed }}ms
+                  </div>
+                }
               }
-              @if (r.success && r.errors.length === 0 && r.warnings.length === 0) {
-                <div class="text-xs p-2 rounded-md"
-                     style="background: #22c55e10; color: var(--success)">
-                  ✓ Compilation successful — {{ r.elapsed }}ms
-                </div>
-              }
-            }
-          </div>
+            </div>
+          } @else {
+            <tf-ai-mentor-panel
+              [code]="code"
+              [errors]="currentErrors()"
+              mode="playground"
+              class="flex flex-col flex-1 overflow-hidden">
+            </tf-ai-mentor-panel>
+          }
         </div>
       </div>
     </div>
@@ -122,6 +141,11 @@ export class PlaygroundComponent {
 
   code = STARTER;
   strict = true;
+  rightPanel = signal<'output' | 'mentor'>('output');
+
+  currentErrors() {
+    return this.compiler.lastResult()?.errors ?? [];
+  }
 
   run() {
     this.compiler.compileAndStore(this.code, this.strict);

@@ -12,11 +12,15 @@ model User {
   email        String   @unique
   username     String   @unique
   password     String
+  role         Role     @default(USER)
   xp           Int      @default(0)
   level        Int      @default(1)
   streak       Int      @default(0)
   lastActive   DateTime @default(now())
-  refreshToken String?
+  refreshToken        String?
+  refreshTokenVersion Int     @default(0)
+  passwordResetToken  String?
+  passwordResetExpiry DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -107,4 +111,9 @@ enum Difficulty {
   INTERMEDIATE
   ADVANCED
   EXPERT
+}
+
+enum Role {
+  USER
+  ADMIN
 }

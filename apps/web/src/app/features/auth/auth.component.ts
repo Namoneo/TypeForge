@@ -1,13 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'tf-auth',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="min-h-screen flex items-center justify-center p-4" style="background: var(--bg-base)">
       <div class="w-full max-w-sm">
@@ -55,6 +55,11 @@ import { AuthService } from '../../core/services/auth.service';
                     [style.opacity]="loading() ? '0.6' : '1'">
               {{ loading() ? 'Please wait…' : (isLogin() ? 'Sign in' : 'Create account') }}
             </button>
+
+            @if (isLogin()) {
+              <a routerLink="/auth/reset-password" class="text-xs text-center"
+                 style="color: var(--text-muted)">Forgot password?</a>
+            }
           </form>
         </div>
       </div>

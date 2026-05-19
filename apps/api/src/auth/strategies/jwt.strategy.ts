@@ -8,6 +8,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   username: string;
+  tokenVersion?: number;
 }
 
 @Injectable()
@@ -23,7 +24,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   async validate(payload: JwtPayload) {
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user) throw new UnauthorizedException();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, refreshToken, ...safe } = user;
-    return safe;
+    return safe; // includes role
   }
 }

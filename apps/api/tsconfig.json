@@ -22,5 +22,5 @@
     "strictPropertyInitialization": false,
     "ignoreDeprecations": "6.0"
   },
-  "exclude": ["node_modules", "dist", "prisma/seed.ts"]
+  "exclude": ["node_modules", "dist", "prisma/seed.ts", "**/*.spec.ts", "test"]
 }

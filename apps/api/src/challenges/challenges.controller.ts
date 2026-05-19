@@ -1,12 +1,15 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { ChallengesService, CreateChallengeDto, SubmitChallengeDto } from './challenges.service';
+import { Throttle } from '@nestjs/throttler';
+import { Role, Difficulty } from '@prisma/client';
+import { ChallengesService, CreateChallengeDto, UpdateChallengeDto, SubmitChallengeDto } from './challenges.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Difficulty } from '@prisma/client';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('challenges')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('challenges')
 export class ChallengesController {
   constructor(private challenges: ChallengesService) {}
@@ -20,7 +23,7 @@ export class ChallengesController {
   }
 
   @Get('my-attempts')
-  @ApiOperation({ summary: 'Get current user\'s submission history' })
+  @ApiOperation({ summary: "Get current user's submission history" })
   myAttempts(@Req() req: any, @Query('challengeId') challengeId?: string) {
     return this.challenges.getUserAttempts(req.user.id, challengeId);
   }
@@ -32,12 +35,28 @@ export class ChallengesController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a new challenge (admin)' })
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Create a new challenge (admin only)' })
   create(@Body() dto: CreateChallengeDto) {
     return this.challenges.create(dto);
   }
 
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update a challenge (admin only)' })
+  update(@Param('id') id: string, @Body() dto: UpdateChallengeDto) {
+    return this.challenges.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Delete a challenge (admin only)' })
+  remove(@Param('id') id: string) {
+    return this.challenges.remove(id);
+  }
+
   @Post('submit')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Submit code for a challenge' })
   submit(@Req() req: any, @Body() dto: SubmitChallengeDto) {
     return this.challenges.submit(req.user.id, dto);

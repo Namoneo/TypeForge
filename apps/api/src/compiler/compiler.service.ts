@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as ts from 'typescript';
+import ivm from 'isolated-vm';
 
 export interface CompileResult {
   success: boolean;
@@ -43,8 +44,23 @@ const STRICT_OPTIONS: ts.CompilerOptions = {
   noEmitOnError: false,
   noImplicitAny: true,
   strictNullChecks: true,
-  lib: ['ES2022'],
 };
+
+const SANDBOX_TIMEOUT_MS = 2000;
+const SANDBOX_MEMORY_MB = 64;
+const MAX_CODE_BYTES = 64 * 1024;       // 64 KB source limit
+const MAX_TEST_INPUT_BYTES = 4 * 1024;  // 4 KB per test input
+
+// Patterns that must never appear in admin-authored test inputs.
+// The sandbox already isolates execution, but these add a defence-in-depth
+// layer against prototype pollution and node: module access.
+const BLOCKED_TEST_INPUT_PATTERNS = [
+  /require\s*\(/,
+  /process\s*\./,
+  /global\s*\[/,
+  /__proto__/,
+  /constructor\s*\[/,
+];
 
 @Injectable()
 export class CompilerService {
@@ -109,6 +125,17 @@ export class CompilerService {
   }
 
   async runChallenge(code: string, testCases: TestCase[]): Promise<ChallengeRunResult> {
+    if (Buffer.byteLength(code, 'utf8') > MAX_CODE_BYTES) {
+      return {
+        passed: false, score: 0,
+        errors: ['Source code exceeds 64 KB limit'],
+        testResults: testCases.map(tc => ({
+          description: tc.description, passed: false,
+          expected: tc.expected, error: 'Source too large',
+        })),
+      };
+    }
+
     const compileResult = this.compile(code);
     if (!compileResult.success || !compileResult.compiledJs) {
       return {
@@ -128,22 +155,47 @@ export class CompilerService {
     let passedCount = 0;
 
     for (const tc of testCases) {
-      try {
-        // Type-check based tests: evaluate expected type expressions
-        const testCode = `${compileResult.compiledJs}\n${tc.input ?? ''}`;
-        // Run in an isolated eval scope — note: real sandbox would use vm2/isolated-vm
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(testCode);
-        const actual = String(fn() ?? '');
-        const pass = actual === tc.expected;
-        if (pass) passedCount++;
-        testResults.push({ description: tc.description, passed: pass, expected: tc.expected, actual });
-      } catch (err: any) {
+      if (!tc.input?.trim()) {
+        passedCount++;
+        testResults.push({ description: tc.description, passed: true, expected: 'ok', actual: 'ok' });
+        continue;
+      }
+
+      const input = tc.input!;
+
+      if (Buffer.byteLength(input, 'utf8') > MAX_TEST_INPUT_BYTES) {
+        testResults.push({
+          description: tc.description, passed: false,
+          expected: tc.expected, error: 'Test input exceeds 4 KB limit',
+        });
+        continue;
+      }
+
+      if (BLOCKED_TEST_INPUT_PATTERNS.some(re => re.test(input))) {
+        testResults.push({
+          description: tc.description, passed: false,
+          expected: tc.expected, error: 'Test input contains disallowed pattern',
+        });
+        continue;
+      }
+
+      const result = await this.runInSandbox(compileResult.compiledJs, input);
+
+      if (result.error) {
         testResults.push({
           description: tc.description,
           passed: false,
           expected: tc.expected,
-          error: err?.message ?? 'Runtime error',
+          error: result.error,
+        });
+      } else {
+        const pass = result.value === tc.expected;
+        if (pass) passedCount++;
+        testResults.push({
+          description: tc.description,
+          passed: pass,
+          expected: tc.expected,
+          actual: result.value,
         });
       }
     }
@@ -156,6 +208,46 @@ export class CompilerService {
       errors: [],
       testResults,
     };
+  }
+
+  private async runInSandbox(
+    compiledJs: string,
+    testInput: string,
+  ): Promise<{ value?: string; error?: string }> {
+    const isolate = new ivm.Isolate({ memoryLimit: SANDBOX_MEMORY_MB });
+    try {
+      const context = await isolate.createContext();
+
+      // Wrap compiled code + test input in a function body so `return` works,
+      // matching the prior new Function() contract.
+      const script = await isolate.compileScript(
+        `(function() {\n${compiledJs}\n${testInput}\n})()`,
+      );
+
+      const raw = await script.run(context, { timeout: SANDBOX_TIMEOUT_MS });
+
+      // Primitives transfer directly; objects need JSON serialisation.
+      let value: string;
+      if (raw === null || raw === undefined) {
+        value = String(raw);
+      } else if (typeof raw === 'object') {
+        // raw is a Reference when the value is a non-transferable object
+        value = String(raw);
+      } else {
+        value = String(raw);
+      }
+
+      return { value };
+    } catch (err: any) {
+      const msg: string = err?.message ?? 'Runtime error';
+      // Normalise timeout message for consistent UX
+      if (msg.includes('Script execution timed out')) {
+        return { error: 'Execution timed out (2s limit)' };
+      }
+      return { error: msg };
+    } finally {
+      isolate.dispose();
+    }
   }
 
   private categoryName(cat: ts.DiagnosticCategory): DiagnosticInfo['category'] {
