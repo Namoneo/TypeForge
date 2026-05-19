@@ -128,9 +128,16 @@ export class CompilerService {
     let passedCount = 0;
 
     for (const tc of testCases) {
+      // Compile-only test: empty input means "passes if compilation succeeded"
+      if (!tc.input?.trim()) {
+        passedCount++;
+        testResults.push({ description: tc.description, passed: true, expected: 'ok', actual: 'ok' });
+        continue;
+      }
+
       try {
         // Type-check based tests: evaluate expected type expressions
-        const testCode = `${compileResult.compiledJs}\n${tc.input ?? ''}`;
+        const testCode = `${compileResult.compiledJs}\n${tc.input}`;
         // Run in an isolated eval scope — note: real sandbox would use vm2/isolated-vm
         // eslint-disable-next-line no-new-func
         const fn = new Function(testCode);
