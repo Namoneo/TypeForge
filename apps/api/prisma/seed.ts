@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { Difficulty, PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -1733,7 +1733,9 @@ async function main() {
   console.log('  ✓ Cleared existing challenges');
 
   for (const c of challenges) {
-    await prisma.challenge.create({ data: { ...c, testCases: c.testCases as any } });
+    await prisma.challenge.create({
+      data: { ...c, difficulty: c.difficulty as Difficulty, testCases: c.testCases as any },
+    });
     console.log(`  ✓ ${c.track.padEnd(14)} ${c.title}`);
   }
 
