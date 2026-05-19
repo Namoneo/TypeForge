@@ -29,7 +29,24 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
+      // NestJS controllers receive req/user as `any` from Passport — downgrade to warn
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+      // Allow _-prefixed vars as explicit "intentionally unused" markers
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
+  },
+  // Spec and e2e files are excluded from the main tsconfig; disable type-checked
+  // rules for them so the project service doesn't try to resolve them.
+  {
+    files: ['**/*.spec.ts', 'test/**/*.ts'],
+    ...tseslint.configs.disableTypeChecked,
   },
 );

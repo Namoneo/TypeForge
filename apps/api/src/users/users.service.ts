@@ -15,7 +15,7 @@ export class UsersService {
       },
     });
     if (!user) throw new NotFoundException();
-    const { password, refreshToken, ...safe } = user;
+    const { password: _password, refreshToken: _refreshToken, ...safe } = user;
     return { ...safe, level: this.calculateLevel(safe.xp) };
   }
 
