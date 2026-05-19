@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { ChallengesModule } from './challenges/challenges.module';
 import { CompilerModule } from './compiler/compiler.module';
 import { GatewayModule } from './gateway/gateway.module';
+import { AiMentorModule } from './ai-mentor/ai-mentor.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { GatewayModule } from './gateway/gateway.module';
     ChallengesModule,
     CompilerModule,
     GatewayModule,
+    AiMentorModule,
   ],
 })
 export class AppModule {}

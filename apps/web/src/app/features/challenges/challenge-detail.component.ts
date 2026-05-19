@@ -1,7 +1,8 @@
 import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MonacoEditorComponent } from '../../shared/components/monaco-editor/monaco-editor.component';
+import { AiMentorPanelComponent } from '../../shared/components/ai-mentor/ai-mentor-panel.component';
 import { ChallengeService, Challenge, SubmitResult } from '../../core/services/challenge.service';
 import { AppStore } from '../../core/store/app.store';
 import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
@@ -9,45 +10,73 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
 @Component({
   selector: 'tf-challenge-detail',
   standalone: true,
-  imports: [CommonModule, MonacoEditorComponent],
+  imports: [CommonModule, MonacoEditorComponent, AiMentorPanelComponent],
   template: `
     <div class="flex h-screen" style="background: var(--bg-base)">
       @if (challenge(); as c) {
-        <!-- Left: description -->
-        <div class="w-96 shrink-0 flex flex-col border-r overflow-auto"
+        <!-- Left: description + AI mentor -->
+        <div class="w-96 shrink-0 flex flex-col border-r"
              style="background: var(--bg-surface); border-color: var(--border)">
-          <!-- Header -->
-          <div class="p-4 border-b" style="border-color: var(--border)">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="text-xs px-2 py-0.5 rounded-full font-mono"
-                    [style.background]="difficultyColor(c.difficulty) + '20'"
-                    [style.color]="difficultyColor(c.difficulty)">
-                {{ c.difficulty }}
-              </span>
-              <span class="text-xs" style="color: var(--text-muted)">{{ c.track }}</span>
-              <span class="ml-auto text-xs font-semibold" style="color: var(--accent)">+{{ c.xpReward }} XP</span>
-            </div>
-            <h1 class="font-bold text-lg" style="color: var(--text-primary)">{{ c.title }}</h1>
+
+          <!-- Tab bar -->
+          <div class="flex border-b shrink-0" style="border-color: var(--border)">
+            <button (click)="leftTab.set('description')"
+                    class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
+                    [style.color]="leftTab() === 'description' ? 'var(--accent)' : 'var(--text-muted)'"
+                    [style.borderBottom]="leftTab() === 'description' ? '2px solid var(--accent)' : '2px solid transparent'">
+              Description
+            </button>
+            <button (click)="leftTab.set('mentor')"
+                    class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
+                    [style.color]="leftTab() === 'mentor' ? 'var(--accent)' : 'var(--text-muted)'"
+                    [style.borderBottom]="leftTab() === 'mentor' ? '2px solid var(--accent)' : '2px solid transparent'">
+              ✦ AI Mentor
+            </button>
           </div>
 
-          <!-- Description -->
-          <div class="p-4 flex-1">
-            <p class="text-sm leading-relaxed mb-4" style="color: var(--text-secondary)">{{ c.description }}</p>
-
-            <!-- Test cases -->
-            <h3 class="text-xs font-semibold mb-2 uppercase tracking-wide" style="color: var(--text-muted)">Test cases</h3>
-            <div class="space-y-2">
-              @for (tc of c.testCases; track $index) {
-                <div class="rounded-lg p-3 text-xs" style="background: var(--bg-elevated)">
-                  <div class="font-medium mb-1" style="color: var(--text-primary)">{{ tc.description }}</div>
-                  @if (tc.input) {
-                    <div class="font-mono" style="color: var(--text-secondary)">Input: {{ tc.input }}</div>
-                  }
-                  <div class="font-mono" style="color: var(--text-muted)">Expected: {{ tc.expected }}</div>
+          @if (leftTab() === 'description') {
+            <!-- Description content -->
+            <div class="flex-1 overflow-auto">
+              <div class="p-4 border-b" style="border-color: var(--border)">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full font-mono"
+                        [style.background]="difficultyColor(c.difficulty) + '20'"
+                        [style.color]="difficultyColor(c.difficulty)">
+                    {{ c.difficulty }}
+                  </span>
+                  <span class="text-xs" style="color: var(--text-muted)">{{ c.track }}</span>
+                  <span class="ml-auto text-xs font-semibold" style="color: var(--accent)">+{{ c.xpReward }} XP</span>
                 </div>
-              }
+                <h1 class="font-bold text-lg" style="color: var(--text-primary)">{{ c.title }}</h1>
+              </div>
+
+              <div class="p-4">
+                <p class="text-sm leading-relaxed mb-4" style="color: var(--text-secondary)">{{ c.description }}</p>
+
+                <h3 class="text-xs font-semibold mb-2 uppercase tracking-wide" style="color: var(--text-muted)">Test cases</h3>
+                <div class="space-y-2">
+                  @for (tc of c.testCases; track $index) {
+                    <div class="rounded-lg p-3 text-xs" style="background: var(--bg-elevated)">
+                      <div class="font-medium mb-1" style="color: var(--text-primary)">{{ tc.description }}</div>
+                      @if (tc.input) {
+                        <div class="font-mono" style="color: var(--text-secondary)">Input: {{ tc.input }}</div>
+                      }
+                      <div class="font-mono" style="color: var(--text-muted)">Expected: {{ tc.expected }}</div>
+                    </div>
+                  }
+                </div>
+              </div>
             </div>
-          </div>
+          } @else {
+            <!-- AI Mentor panel -->
+            <tf-ai-mentor-panel
+              [code]="code()"
+              [errors]="submitErrors()"
+              [context]="c.title + ': ' + c.description"
+              mode="challenge"
+              class="flex flex-col flex-1 overflow-hidden">
+            </tf-ai-mentor-panel>
+          }
         </div>
 
         <!-- Right: editor + results -->
@@ -57,6 +86,11 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
                style="background: var(--bg-surface); border-color: var(--border)">
             <span class="text-sm font-medium truncate" style="color: var(--text-secondary)">{{ c.title }}</span>
             <div class="flex-1"></div>
+            <button (click)="leftTab.set('mentor')"
+                    class="px-3 py-1.5 rounded-md text-xs border transition-colors"
+                    style="border-color: var(--border); color: var(--text-secondary)">
+              ✦ Ask AI
+            </button>
             <button (click)="submit()" [disabled]="submitting()"
                     class="px-4 py-1.5 rounded-md text-xs font-medium transition-opacity"
                     style="background: var(--accent); color: white"
@@ -88,6 +122,12 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
                         style="background: var(--accent); color: white">
                     +{{ r.xpEarned }} XP
                   </span>
+                }
+                @if (!r.passed) {
+                  <button (click)="askMentorForHelp(c)" class="ml-auto text-xs px-2 py-0.5 rounded border"
+                          style="border-color: var(--accent); color: var(--accent)">
+                    ✦ Get help
+                  </button>
                 }
               </div>
               <div class="space-y-1.5">
@@ -123,6 +163,8 @@ export class ChallengeDetailComponent implements OnInit {
   submitting = signal(false);
   result = signal<SubmitResult | null>(null);
   code = signal('');
+  leftTab = signal<'description' | 'mentor'>('description');
+  submitErrors = signal<{ code: number; message: string; line?: number; column?: number }[]>([]);
 
   difficultyColor(d: string) { return DIFFICULTY_COLORS[d] ?? '#888'; }
 
@@ -152,5 +194,9 @@ export class ChallengeDetailComponent implements OnInit {
       },
       error: () => this.submitting.set(false),
     });
+  }
+
+  askMentorForHelp(c: Challenge) {
+    this.leftTab.set('mentor');
   }
 }

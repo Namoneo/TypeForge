@@ -48,7 +48,7 @@ TypeForge/
 | WebSocket gateway | ✅ Live compilation via Socket.IO |
 | Global leaderboard | ✅ |
 | Swagger API docs | ✅ `/api/docs` |
-| AI Mentor | 🔜 Requires LLM API key |
+| AI Mentor (explain errors, review code, hints) | ✅ Claude claude-opus-4-7 via `@anthropic-ai/sdk` — streaming SSE |
 
 ---
 
@@ -79,7 +79,8 @@ docker-compose up postgres redis -d
 
 ```bash
 cp apps/api/.env.example apps/api/.env
-# Edit apps/api/.env — set JWT_SECRET and JWT_REFRESH_SECRET
+# Edit apps/api/.env — set JWT_SECRET, JWT_REFRESH_SECRET
+# Optional: set ANTHROPIC_API_KEY to enable the AI Mentor (get one at https://console.anthropic.com)
 ```
 
 ### 4. Set up the database
@@ -126,6 +127,7 @@ Key endpoints:
 | `GET` | `/api/challenges/:id` | Get single challenge |
 | `POST` | `/api/challenges/submit` | Submit code, run test cases |
 | `POST` | `/api/compiler/compile` | Compile TypeScript, get diagnostics |
+| `POST` | `/api/ai-mentor/ask` | AI Mentor — streams SSE (explain errors / review / hint / concept) |
 
 WebSocket namespace: `/typeforge`  
 Events: `compile` → `compile:result`, `playground:join` → `playground:joined`
