@@ -14,10 +14,15 @@ import { Server, Socket } from 'socket.io';
 import { CompilerService } from '../compiler/compiler.service';
 
 @WebSocketGateway({
-  cors: { origin: process.env.FRONTEND_URL ?? 'http://localhost:4200', credentials: true },
+  cors: {
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:4200',
+    credentials: true,
+  },
   namespace: '/typeforge',
 })
-export class TypeForgeGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class TypeForgeGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(TypeForgeGateway.name);
 
@@ -31,7 +36,10 @@ export class TypeForgeGateway implements OnGatewayConnection, OnGatewayDisconnec
     try {
       const token =
         (client.handshake.auth?.token as string) ??
-        (client.handshake.headers?.authorization as string)?.replace('Bearer ', '');
+        (client.handshake.headers?.authorization as string)?.replace(
+          'Bearer ',
+          '',
+        );
 
       if (!token) throw new UnauthorizedException('No token provided');
 

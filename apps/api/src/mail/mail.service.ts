@@ -21,18 +21,24 @@ export class MailService {
       });
     } else {
       // Fall back to Ethereal (catches emails in dev without real SMTP)
-      nodemailer.createTestAccount().then(account => {
+      nodemailer.createTestAccount().then((account) => {
         this.transporter = nodemailer.createTransport({
           host: 'smtp.ethereal.email',
           port: 587,
           auth: { user: account.user, pass: account.pass },
         });
-        this.logger.warn(`No SMTP_HOST set — using Ethereal test account: ${account.user}`);
+        this.logger.warn(
+          `No SMTP_HOST set — using Ethereal test account: ${account.user}`,
+        );
       });
     }
   }
 
-  async sendPasswordReset(to: string, token: string, frontendUrl: string): Promise<void> {
+  async sendPasswordReset(
+    to: string,
+    token: string,
+    frontendUrl: string,
+  ): Promise<void> {
     const resetUrl = `${frontendUrl}/auth/reset-password?token=${token}`;
 
     if (!this.transporter) {
@@ -52,6 +58,8 @@ export class MailService {
       `,
     });
 
-    this.logger.log(`Password reset email sent to ${to} (messageId: ${info.messageId})`);
+    this.logger.log(
+      `Password reset email sent to ${to} (messageId: ${info.messageId})`,
+    );
   }
 }

@@ -23,9 +23,10 @@ async function bootstrap() {
   }
 
   // Fail fast on missing env vars before binding any port
-  const frontendUrl = process.env.NODE_ENV === 'production'
-    ? requireEnv('FRONTEND_URL')
-    : (process.env.FRONTEND_URL ?? 'http://localhost:4200');
+  const frontendUrl =
+    process.env.NODE_ENV === 'production'
+      ? requireEnv('FRONTEND_URL')
+      : (process.env.FRONTEND_URL ?? 'http://localhost:4200');
 
   if (process.env.NODE_ENV === 'production') {
     requireEnv('JWT_SECRET');
@@ -36,26 +37,32 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
 
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:'],
-        connectSrc: ["'self'"],
-        frameSrc: ["'none'"],
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          frameSrc: ["'none'"],
+        },
       },
-    },
-    crossOriginEmbedderPolicy: false, // needed for Swagger UI
-  }));
+      crossOriginEmbedderPolicy: false, // needed for Swagger UI
+    }),
+  );
 
   app.setGlobalPrefix('api');
 
   app.useGlobalFilters(new SentryExceptionFilter());
 
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
   );
 
   app.enableCors({
@@ -69,7 +76,11 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
+  SwaggerModule.setup(
+    'api/docs',
+    app,
+    SwaggerModule.createDocument(app, swaggerConfig),
+  );
 
   app.enableShutdownHooks();
 

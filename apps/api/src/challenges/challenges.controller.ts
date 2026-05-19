@@ -1,8 +1,29 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Role, Difficulty } from '@prisma/client';
-import { ChallengesService, CreateChallengeDto, UpdateChallengeDto, SubmitChallengeDto } from './challenges.service';
+import {
+  ChallengesService,
+  CreateChallengeDto,
+  UpdateChallengeDto,
+  SubmitChallengeDto,
+} from './challenges.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -18,7 +39,10 @@ export class ChallengesController {
   @ApiOperation({ summary: 'List all published challenges' })
   @ApiQuery({ name: 'track', required: false })
   @ApiQuery({ name: 'difficulty', required: false, enum: Difficulty })
-  findAll(@Query('track') track?: string, @Query('difficulty') difficulty?: Difficulty) {
+  findAll(
+    @Query('track') track?: string,
+    @Query('difficulty') difficulty?: Difficulty,
+  ) {
     return this.challenges.findAll(track, difficulty);
   }
 

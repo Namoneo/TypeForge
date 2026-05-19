@@ -2,7 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CompilerService } from '../compiler/compiler.service';
 import { Difficulty } from '@prisma/client';
-import { IsString, IsEnum, IsOptional, IsInt, IsArray, IsBoolean, Min } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsInt,
+  IsArray,
+  IsBoolean,
+  Min,
+} from 'class-validator';
 
 export class CreateChallengeDto {
   @IsString() title: string;
@@ -24,7 +32,11 @@ export class UpdateChallengeDto {
   @IsOptional() @IsString() track?: string;
   @IsOptional() @IsString() starterCode?: string;
   @IsOptional() @IsString() solutionCode?: string;
-  @IsOptional() testCases?: Array<{ description: string; input?: string; expected: string }>;
+  @IsOptional() testCases?: Array<{
+    description: string;
+    input?: string;
+    expected: string;
+  }>;
   @IsOptional() @IsInt() @Min(1) xpReward?: number;
   @IsOptional() @IsArray() tags?: string[];
   @IsOptional() @IsBoolean() published?: boolean;
@@ -51,9 +63,15 @@ export class ChallengesService {
       },
       orderBy: [{ track: 'asc' }, { order: 'asc' }],
       select: {
-        id: true, title: true, description: true,
-        difficulty: true, track: true, xpReward: true,
-        tags: true, order: true, createdAt: true,
+        id: true,
+        title: true,
+        description: true,
+        difficulty: true,
+        track: true,
+        xpReward: true,
+        tags: true,
+        order: true,
+        createdAt: true,
       },
     });
   }
@@ -63,9 +81,16 @@ export class ChallengesService {
     return this.prisma.challenge.findMany({
       orderBy: [{ track: 'asc' }, { order: 'asc' }],
       select: {
-        id: true, title: true, description: true,
-        difficulty: true, track: true, xpReward: true,
-        tags: true, order: true, published: true, createdAt: true,
+        id: true,
+        title: true,
+        description: true,
+        difficulty: true,
+        track: true,
+        xpReward: true,
+        tags: true,
+        order: true,
+        published: true,
+        createdAt: true,
       },
     });
   }
@@ -112,7 +137,9 @@ export class ChallengesService {
   async remove(id: string) {
     const challenge = await this.prisma.challenge.findUnique({ where: { id } });
     if (!challenge) throw new NotFoundException('Challenge not found');
-    await this.prisma.challengeAttempt.deleteMany({ where: { challengeId: id } });
+    await this.prisma.challengeAttempt.deleteMany({
+      where: { challengeId: id },
+    });
     return this.prisma.challenge.delete({ where: { id } });
   }
 
@@ -122,7 +149,11 @@ export class ChallengesService {
     });
     if (!challenge) throw new NotFoundException('Challenge not found');
 
-    const testCases = challenge.testCases as Array<{ description: string; input?: string; expected: string }>;
+    const testCases = challenge.testCases as Array<{
+      description: string;
+      input?: string;
+      expected: string;
+    }>;
     const result = await this.compiler.runChallenge(dto.code, testCases);
 
     const attempt = await this.prisma.challengeAttempt.create({

@@ -96,7 +96,10 @@ export class AiMentorService {
           '```\n',
           '**Errors:**',
           (dto.errors ?? [])
-            .map((e) => `- TS${e.code}: ${e.message}${e.line ? ` (line ${e.line})` : ''}`)
+            .map(
+              (e) =>
+                `- TS${e.code}: ${e.message}${e.line ? ` (line ${e.line})` : ''}`,
+            )
             .join('\n') || '(no specific errors listed)',
         ].join('\n');
 

@@ -6,12 +6,18 @@ import { Request } from 'express';
 import type { JwtPayload } from './jwt.strategy';
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(config: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromBodyField('refreshToken'),
       ignoreExpiration: false,
-      secretOrKey: config.get<string>('JWT_REFRESH_SECRET', 'fallback-refresh-secret'),
+      secretOrKey: config.get<string>(
+        'JWT_REFRESH_SECRET',
+        'fallback-refresh-secret',
+      ),
       passReqToCallback: true,
     });
   }

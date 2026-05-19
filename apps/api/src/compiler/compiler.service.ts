@@ -48,8 +48,8 @@ const STRICT_OPTIONS: ts.CompilerOptions = {
 
 const SANDBOX_TIMEOUT_MS = 2000;
 const SANDBOX_MEMORY_MB = 64;
-const MAX_CODE_BYTES = 64 * 1024;       // 64 KB source limit
-const MAX_TEST_INPUT_BYTES = 4 * 1024;  // 4 KB per test input
+const MAX_CODE_BYTES = 64 * 1024; // 64 KB source limit
+const MAX_TEST_INPUT_BYTES = 4 * 1024; // 4 KB per test input
 
 // Patterns that must never appear in admin-authored test inputs.
 // The sandbox already isolates execution, but these add a defence-in-depth
@@ -68,14 +68,21 @@ export class CompilerService {
     const start = Date.now();
     const filename = 'input.ts';
 
-    const sourceFile = ts.createSourceFile(filename, code, ts.ScriptTarget.ES2022, true);
+    const sourceFile = ts.createSourceFile(
+      filename,
+      code,
+      ts.ScriptTarget.ES2022,
+      true,
+    );
 
-    const options: ts.CompilerOptions = strict ? STRICT_OPTIONS : {
-      ...STRICT_OPTIONS,
-      strict: false,
-      noImplicitAny: false,
-      strictNullChecks: false,
-    };
+    const options: ts.CompilerOptions = strict
+      ? STRICT_OPTIONS
+      : {
+          ...STRICT_OPTIONS,
+          strict: false,
+          noImplicitAny: false,
+          strictNullChecks: false,
+        };
 
     let compiledJs: string | undefined;
     const host = ts.createCompilerHost(options);
@@ -83,11 +90,15 @@ export class CompilerService {
 
     host.getSourceFile = (name, langVersion) =>
       name === filename ? sourceFile : originalGetSourceFile(name, langVersion);
-    host.writeFile = (_name, text) => { compiledJs = text; };
+    host.writeFile = (_name, text) => {
+      compiledJs = text;
+    };
 
     const program = ts.createProgram([filename], options, host);
     const emitResult = program.emit();
-    const allDiagnostics = ts.getPreEmitDiagnostics(program).concat(emitResult.diagnostics);
+    const allDiagnostics = ts
+      .getPreEmitDiagnostics(program)
+      .concat(emitResult.diagnostics);
 
     const errors: DiagnosticInfo[] = [];
     const warnings: DiagnosticInfo[] = [];
@@ -124,14 +135,20 @@ export class CompilerService {
     };
   }
 
-  async runChallenge(code: string, testCases: TestCase[]): Promise<ChallengeRunResult> {
+  async runChallenge(
+    code: string,
+    testCases: TestCase[],
+  ): Promise<ChallengeRunResult> {
     if (Buffer.byteLength(code, 'utf8') > MAX_CODE_BYTES) {
       return {
-        passed: false, score: 0,
+        passed: false,
+        score: 0,
         errors: ['Source code exceeds 64 KB limit'],
-        testResults: testCases.map(tc => ({
-          description: tc.description, passed: false,
-          expected: tc.expected, error: 'Source too large',
+        testResults: testCases.map((tc) => ({
+          description: tc.description,
+          passed: false,
+          expected: tc.expected,
+          error: 'Source too large',
         })),
       };
     }
@@ -157,24 +174,33 @@ export class CompilerService {
     for (const tc of testCases) {
       if (!tc.input?.trim()) {
         passedCount++;
-        testResults.push({ description: tc.description, passed: true, expected: 'ok', actual: 'ok' });
-        continue;
-      }
-
-      const input = tc.input!;
-
-      if (Buffer.byteLength(input, 'utf8') > MAX_TEST_INPUT_BYTES) {
         testResults.push({
-          description: tc.description, passed: false,
-          expected: tc.expected, error: 'Test input exceeds 4 KB limit',
+          description: tc.description,
+          passed: true,
+          expected: 'ok',
+          actual: 'ok',
         });
         continue;
       }
 
-      if (BLOCKED_TEST_INPUT_PATTERNS.some(re => re.test(input))) {
+      const input = tc.input;
+
+      if (Buffer.byteLength(input, 'utf8') > MAX_TEST_INPUT_BYTES) {
         testResults.push({
-          description: tc.description, passed: false,
-          expected: tc.expected, error: 'Test input contains disallowed pattern',
+          description: tc.description,
+          passed: false,
+          expected: tc.expected,
+          error: 'Test input exceeds 4 KB limit',
+        });
+        continue;
+      }
+
+      if (BLOCKED_TEST_INPUT_PATTERNS.some((re) => re.test(input))) {
+        testResults.push({
+          description: tc.description,
+          passed: false,
+          expected: tc.expected,
+          error: 'Test input contains disallowed pattern',
         });
         continue;
       }
@@ -200,7 +226,10 @@ export class CompilerService {
       }
     }
 
-    const score = testCases.length > 0 ? Math.round((passedCount / testCases.length) * 100) : 0;
+    const score =
+      testCases.length > 0
+        ? Math.round((passedCount / testCases.length) * 100)
+        : 0;
 
     return {
       passed: passedCount === testCases.length,
@@ -252,10 +281,14 @@ export class CompilerService {
 
   private categoryName(cat: ts.DiagnosticCategory): DiagnosticInfo['category'] {
     switch (cat) {
-      case ts.DiagnosticCategory.Error: return 'error';
-      case ts.DiagnosticCategory.Warning: return 'warning';
-      case ts.DiagnosticCategory.Suggestion: return 'suggestion';
-      default: return 'message';
+      case ts.DiagnosticCategory.Error:
+        return 'error';
+      case ts.DiagnosticCategory.Warning:
+        return 'warning';
+      case ts.DiagnosticCategory.Suggestion:
+        return 'suggestion';
+      default:
+        return 'message';
     }
   }
 }

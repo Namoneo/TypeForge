@@ -18,17 +18,21 @@ import { HealthModule } from './health/health.module';
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-        transport: process.env.NODE_ENV !== 'production'
-          ? { target: 'pino-pretty', options: { colorize: true, singleLine: true } }
-          : undefined,
+        transport:
+          process.env.NODE_ENV !== 'production'
+            ? {
+                target: 'pino-pretty',
+                options: { colorize: true, singleLine: true },
+              }
+            : undefined,
         redact: ['req.headers.authorization', 'req.headers.cookie'],
       },
     }),
     ThrottlerModule.forRoot([
       {
         name: 'global',
-        ttl: 60000,  // 1 minute
-        limit: 120,  // 120 req/min default
+        ttl: 60000, // 1 minute
+        limit: 120, // 120 req/min default
       },
     ]),
     PrismaModule,

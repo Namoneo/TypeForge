@@ -1,4 +1,10 @@
-import { IsEnum, IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -25,7 +31,9 @@ export class AskMentorDto {
   @IsString()
   code: string;
 
-  @ApiPropertyOptional({ description: 'Challenge description, concept name, or extra context' })
+  @ApiPropertyOptional({
+    description: 'Challenge description, concept name, or extra context',
+  })
   @IsOptional()
   @IsString()
   context?: string;

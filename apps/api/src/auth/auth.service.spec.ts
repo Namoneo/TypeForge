@@ -85,7 +85,11 @@ describe('AuthService', () => {
       mockPrisma.user.findFirst.mockResolvedValue({ ...mockUser });
 
       await expect(
-        service.register({ email: 'alice@example.com', username: 'new', password: 'Password1!' }),
+        service.register({
+          email: 'alice@example.com',
+          username: 'new',
+          password: 'Password1!',
+        }),
       ).rejects.toThrow(ConflictException);
     });
   });
@@ -94,11 +98,17 @@ describe('AuthService', () => {
     it('returns tokens for valid credentials', async () => {
       const bcrypt = await import('bcrypt');
       const hashed = await bcrypt.hash('Password1!', 10);
-      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, password: hashed });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        password: hashed,
+      });
       mockPrisma.user.update.mockResolvedValue(mockUser);
       mockPrisma.user.findUniqueOrThrow.mockResolvedValue(mockUser);
 
-      const result = await service.login({ email: 'alice@example.com', password: 'Password1!' });
+      const result = await service.login({
+        email: 'alice@example.com',
+        password: 'Password1!',
+      });
       expect(result.accessToken).toBeDefined();
     });
 
@@ -113,10 +123,16 @@ describe('AuthService', () => {
     it('throws UnauthorizedException for wrong password', async () => {
       const bcrypt = await import('bcrypt');
       const hashed = await bcrypt.hash('CorrectPassword1!', 10);
-      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, password: hashed });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        password: hashed,
+      });
 
       await expect(
-        service.login({ email: 'alice@example.com', password: 'WrongPassword!' }),
+        service.login({
+          email: 'alice@example.com',
+          password: 'WrongPassword!',
+        }),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
@@ -126,32 +142,45 @@ describe('AuthService', () => {
       const bcrypt = await import('bcrypt');
       const raw = 'raw-refresh-token';
       const hashed = await bcrypt.hash(raw, 10);
-      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, refreshToken: hashed });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        refreshToken: hashed,
+      });
       mockPrisma.user.update.mockResolvedValue(mockUser);
       mockPrisma.user.findUniqueOrThrow.mockResolvedValue(mockUser);
 
       // Pass the same tokenVersion that is in mockUser (3)
-      const result = await service.refresh('user-1', raw, mockUser.refreshTokenVersion);
+      const result = await service.refresh(
+        'user-1',
+        raw,
+        mockUser.refreshTokenVersion,
+      );
       expect(result.accessToken).toBeDefined();
     });
 
     it('throws UnauthorizedException when refresh token is null', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, refreshToken: null });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        refreshToken: null,
+      });
 
-      await expect(service.refresh('user-1', 'any-token', mockUser.refreshTokenVersion)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.refresh('user-1', 'any-token', mockUser.refreshTokenVersion),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('throws UnauthorizedException when refresh token does not match', async () => {
       const bcrypt = await import('bcrypt');
       const hashed = await bcrypt.hash('correct-token', 10);
-      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, refreshToken: hashed });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        refreshToken: hashed,
+      });
       mockPrisma.user.update.mockResolvedValue(mockUser);
 
-      await expect(service.refresh('user-1', 'wrong-token', mockUser.refreshTokenVersion)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.refresh('user-1', 'wrong-token', mockUser.refreshTokenVersion),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('throws UnauthorizedException and clears tokens when tokenVersion is stale (reuse detected)', async () => {
@@ -159,10 +188,16 @@ describe('AuthService', () => {
       const raw = 'raw-refresh-token';
       const hashed = await bcrypt.hash(raw, 10);
       // DB has version 3, but the presented JWT carries version 2 (stale/rotated token)
-      mockPrisma.user.findUnique.mockResolvedValue({ ...mockUser, refreshToken: hashed, refreshTokenVersion: 3 });
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        refreshToken: hashed,
+        refreshTokenVersion: 3,
+      });
       mockPrisma.user.update.mockResolvedValue(mockUser);
 
-      await expect(service.refresh('user-1', raw, 2)).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh('user-1', raw, 2)).rejects.toThrow(
+        UnauthorizedException,
+      );
 
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: 'user-1' },

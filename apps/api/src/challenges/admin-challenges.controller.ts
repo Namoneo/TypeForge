@@ -15,13 +15,17 @@ export class AdminChallengesController {
   constructor(private challenges: ChallengesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all challenges including unpublished (admin)' })
+  @ApiOperation({
+    summary: 'List all challenges including unpublished (admin)',
+  })
   findAll() {
     return this.challenges.findAllAdmin();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get full challenge including solution code (admin)' })
+  @ApiOperation({
+    summary: 'Get full challenge including solution code (admin)',
+  })
   findOne(@Param('id') id: string) {
     return this.challenges.findOneAdmin(id);
   }

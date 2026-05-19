@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -23,7 +28,9 @@ export class AuthService {
     });
     if (existing) {
       throw new ConflictException(
-        existing.email === dto.email ? 'Email already in use' : 'Username already taken',
+        existing.email === dto.email
+          ? 'Email already in use'
+          : 'Username already taken',
       );
     }
 
@@ -33,11 +40,18 @@ export class AuthService {
     });
 
     // Start a fresh token family at version 0 (the default on creation)
-    return this.generateTokens(user.id, user.email, user.username, user.refreshTokenVersion);
+    return this.generateTokens(
+      user.id,
+      user.email,
+      user.username,
+      user.refreshTokenVersion,
+    );
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const valid = await bcrypt.compare(dto.password, user.password);
@@ -49,14 +63,21 @@ export class AuthService {
     return this.generateTokens(user.id, user.email, user.username, nextVersion);
   }
 
-  async refresh(userId: string, rawRefreshToken: string, tokenVersion: number | undefined) {
+  async refresh(
+    userId: string,
+    rawRefreshToken: string,
+    tokenVersion: number | undefined,
+  ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user?.refreshToken) throw new UnauthorizedException();
 
     // Token family check: if the version embedded in the JWT doesn't match the
     // DB value the token has already been rotated, meaning a stale (possibly
     // stolen) token is being replayed.  Invalidate everything immediately.
-    if (tokenVersion === undefined || tokenVersion !== user.refreshTokenVersion) {
+    if (
+      tokenVersion === undefined ||
+      tokenVersion !== user.refreshTokenVersion
+    ) {
       await this.prisma.user.update({
         where: { id: userId },
         data: { refreshToken: null, refreshTokenVersion: 0 },
@@ -93,7 +114,10 @@ export class AuthService {
       data: { passwordResetToken: token, passwordResetExpiry: expiry },
     });
 
-    const frontendUrl = this.config.get('FRONTEND_URL', 'http://localhost:4200');
+    const frontendUrl = this.config.get(
+      'FRONTEND_URL',
+      'http://localhost:4200',
+    );
     await this.mail.sendPasswordReset(email, token, frontendUrl);
   }
 
@@ -138,7 +162,10 @@ export class AuthService {
         expiresIn: this.config.get('JWT_EXPIRES_IN', '15m'),
       }),
       this.jwtService.signAsync(refreshPayload, {
-        secret: this.config.get('JWT_REFRESH_SECRET', 'fallback-refresh-secret'),
+        secret: this.config.get(
+          'JWT_REFRESH_SECRET',
+          'fallback-refresh-secret',
+        ),
         expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d'),
       }),
     ]);
@@ -150,7 +177,9 @@ export class AuthService {
       data: { refreshToken: hashed, refreshTokenVersion: tokenVersion },
     });
 
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+    });
 
     return {
       accessToken,

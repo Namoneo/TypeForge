@@ -55,10 +55,9 @@ describe('CompilerService', () => {
     });
 
     it('returns compilation failure when code is invalid', async () => {
-      const result = await service.runChallenge(
-        `const x: number = "bad";`,
-        [{ description: 'test', input: 'return 1', expected: '1' }],
-      );
+      const result = await service.runChallenge(`const x: number = "bad";`, [
+        { description: 'test', input: 'return 1', expected: '1' },
+      ]);
       expect(result.passed).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     });
@@ -75,7 +74,13 @@ describe('CompilerService', () => {
     it('reports failure when test result does not match', async () => {
       const result = await service.runChallenge(
         `function add(a: number, b: number): number { return a - b; }`,
-        [{ description: 'should add', input: 'return add(2, 3)', expected: '5' }],
+        [
+          {
+            description: 'should add',
+            input: 'return add(2, 3)',
+            expected: '5',
+          },
+        ],
       );
       expect(result.passed).toBe(false);
       expect(result.testResults[0].actual).toBe('-1');
@@ -84,7 +89,13 @@ describe('CompilerService', () => {
     it('sandboxes code — no access to Node globals', async () => {
       const result = await service.runChallenge(
         `function evil(): string { return (globalThis as any).process?.version ?? 'sandboxed'; }`,
-        [{ description: 'no process access', input: 'return evil()', expected: 'sandboxed' }],
+        [
+          {
+            description: 'no process access',
+            input: 'return evil()',
+            expected: 'sandboxed',
+          },
+        ],
       );
       // Either it's sandboxed (returns 'sandboxed') or throws — both are acceptable
       if (result.testResults[0].error) {
@@ -97,7 +108,13 @@ describe('CompilerService', () => {
     it('enforces execution timeout', async () => {
       const result = await service.runChallenge(
         `function loop(): number { while(true) {} return 0; }`,
-        [{ description: 'infinite loop', input: 'return loop()', expected: '0' }],
+        [
+          {
+            description: 'infinite loop',
+            input: 'return loop()',
+            expected: '0',
+          },
+        ],
       );
       expect(result.passed).toBe(false);
       expect(result.testResults[0].error).toMatch(/timed? ?out/i);
