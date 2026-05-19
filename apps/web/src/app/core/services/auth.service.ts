@@ -7,7 +7,7 @@ import { AppStore } from '../store/app.store';
 interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  user: { id: string; email: string; username: string; xp: number; level: number; streak: number };
+  user: { id: string; email: string; username: string; role: string; xp: number; level: number; streak: number };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -37,6 +37,11 @@ export class AuthService {
     }
     this.store.clearAuth();
     this.router.navigate(['/auth/login']);
+  }
+
+  clearSession() {
+    this.store.clearAuth();
+    localStorage.removeItem('tf_refresh');
   }
 
   private handleAuth(res: AuthResponse) {

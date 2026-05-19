@@ -8,9 +8,12 @@ export interface Challenge {
   difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
   track: string;
   starterCode: string;
+  solutionCode?: string;
   testCases: Array<{ description: string; input?: string; expected: string }>;
   xpReward: number;
   tags: string[];
+  order?: number;
+  published?: boolean;
 }
 
 export interface SubmitResult {
@@ -19,6 +22,19 @@ export interface SubmitResult {
   xpEarned: number;
   errors: string[];
   testResults: Array<{ description: string; passed: boolean; expected: string; actual?: string; error?: string }>;
+}
+
+export interface CreateChallengePayload {
+  title: string;
+  description: string;
+  difficulty: string;
+  track: string;
+  starterCode: string;
+  solutionCode: string;
+  testCases: Array<{ description: string; input?: string; expected: string }>;
+  xpReward: number;
+  tags: string[];
+  published: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -39,5 +55,26 @@ export class ChallengeService {
 
   submit(challengeId: string, code: string) {
     return this.api.post<SubmitResult>('/challenges/submit', { challengeId, code });
+  }
+
+  // Admin methods
+  adminGetAll() {
+    return this.api.get<Challenge[]>('/admin/challenges');
+  }
+
+  adminGetOne(id: string) {
+    return this.api.get<Challenge>(`/admin/challenges/${id}`);
+  }
+
+  adminCreate(payload: CreateChallengePayload) {
+    return this.api.post<Challenge>('/challenges', payload);
+  }
+
+  adminUpdate(id: string, payload: Partial<CreateChallengePayload>) {
+    return this.api.patch<Challenge>(`/challenges/${id}`, payload);
+  }
+
+  adminDelete(id: string) {
+    return this.api.delete<void>(`/challenges/${id}`);
   }
 }

@@ -1,6 +1,7 @@
 import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MonacoEditorComponent } from '../../shared/components/monaco-editor/monaco-editor.component';
 import { AiMentorPanelComponent } from '../../shared/components/ai-mentor/ai-mentor-panel.component';
 import { ChallengeService, Challenge, SubmitResult } from '../../core/services/challenge.service';
@@ -13,7 +14,22 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
   imports: [CommonModule, MonacoEditorComponent, AiMentorPanelComponent],
   template: `
     <div class="flex h-screen" style="background: var(--bg-base)">
-      @if (challenge(); as c) {
+
+      <!-- Global error toast -->
+      @if (toastMessage()) {
+        <div class="fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium"
+             style="background: var(--danger); color: white; max-width: 360px">
+          {{ toastMessage() }}
+        </div>
+      }
+
+      @if (loadError()) {
+        <div class="flex flex-col items-center justify-center w-full gap-3"
+             style="color: var(--text-muted)">
+          <span style="color: var(--danger)">Failed to load challenge</span>
+          <span class="text-xs">{{ loadError() }}</span>
+        </div>
+      } @else if (challenge(); as c) {
         <!-- Left: description + AI mentor -->
         <div class="w-96 shrink-0 flex flex-col border-r"
              style="background: var(--bg-surface); border-color: var(--border)">
@@ -35,7 +51,6 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
           </div>
 
           @if (leftTab() === 'description') {
-            <!-- Description content -->
             <div class="flex-1 overflow-auto">
               <div class="p-4 border-b" style="border-color: var(--border)">
                 <div class="flex items-center gap-2 mb-2">
@@ -68,7 +83,6 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
               </div>
             </div>
           } @else {
-            <!-- AI Mentor panel -->
             <tf-ai-mentor-panel
               [code]="code()"
               [errors]="submitErrors()"
@@ -81,7 +95,6 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
 
         <!-- Right: editor + results -->
         <div class="flex-1 flex flex-col overflow-hidden">
-          <!-- Toolbar -->
           <div class="flex items-center gap-2 px-4 py-2 border-b shrink-0"
                style="background: var(--bg-surface); border-color: var(--border)">
             <span class="text-sm font-medium truncate" style="color: var(--text-secondary)">{{ c.title }}</span>
@@ -99,14 +112,19 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
             </button>
           </div>
 
-          <!-- Monaco -->
           <div class="flex-1 overflow-hidden">
             <tf-monaco-editor #editor [value]="code()" language="typescript"
               (valueChange)="code.set($event)">
             </tf-monaco-editor>
           </div>
 
-          <!-- Results panel -->
+          @if (submitError()) {
+            <div class="border-t px-4 py-3 text-xs shrink-0"
+                 style="background: var(--bg-surface); border-color: var(--border); color: var(--danger)">
+              ✖ Submission failed: {{ submitError() }}
+            </div>
+          }
+
           @if (result(); as r) {
             <div class="border-t p-4 shrink-0 max-h-56 overflow-auto"
                  style="background: var(--bg-surface); border-color: var(--border)">
@@ -124,7 +142,7 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
                   </span>
                 }
                 @if (!r.passed) {
-                  <button (click)="askMentorForHelp(c)" class="ml-auto text-xs px-2 py-0.5 rounded border"
+                  <button (click)="leftTab.set('mentor')" class="ml-auto text-xs px-2 py-0.5 rounded border"
                           style="border-color: var(--accent); color: var(--accent)">
                     ✦ Get help
                   </button>
@@ -137,8 +155,10 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
                       {{ tr.passed ? '✓' : '✖' }}
                     </span>
                     <span style="color: var(--text-secondary)">{{ tr.description }}</span>
-                    @if (!tr.passed && tr.error) {
-                      <span style="color: var(--danger)" class="ml-auto">{{ tr.error }}</span>
+                    @if (!tr.passed) {
+                      <span style="color: var(--danger)" class="ml-auto font-mono">
+                        {{ tr.error ?? ('got: ' + tr.actual) }}
+                      </span>
                     }
                   </div>
                 }
@@ -147,7 +167,9 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
           }
         </div>
       } @else if (loading()) {
-        <div class="flex items-center justify-center w-full" style="color: var(--text-muted)">Loading challenge…</div>
+        <div class="flex items-center justify-center w-full" style="color: var(--text-muted)">
+          Loading challenge…
+        </div>
       }
     </div>
   `,
@@ -160,11 +182,14 @@ export class ChallengeDetailComponent implements OnInit {
 
   challenge = signal<Challenge | null>(null);
   loading = signal(true);
+  loadError = signal<string | null>(null);
   submitting = signal(false);
+  submitError = signal<string | null>(null);
   result = signal<SubmitResult | null>(null);
   code = signal('');
   leftTab = signal<'description' | 'mentor'>('description');
   submitErrors = signal<{ code: number; message: string; line?: number; column?: number }[]>([]);
+  toastMessage = signal<string | null>(null);
 
   difficultyColor(d: string) { return DIFFICULTY_COLORS[d] ?? '#888'; }
 
@@ -176,7 +201,10 @@ export class ChallengeDetailComponent implements OnInit {
         this.code.set(c.starterCode);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.loadError.set(err.status === 404 ? 'Challenge not found.' : 'Could not load challenge. Please try again.');
+      },
     });
   }
 
@@ -184,19 +212,26 @@ export class ChallengeDetailComponent implements OnInit {
     const c = this.challenge();
     if (!c) return;
     this.submitting.set(true);
+    this.submitError.set(null);
     this.svc.submit(c.id, this.code()).subscribe({
       next: (r) => {
         this.result.set(r);
         this.submitting.set(false);
         if (r.xpEarned > 0) {
-          this.store.updateUser({ xp: (this.store.xp() + r.xpEarned) });
+          this.store.updateUser({ xp: this.store.xp() + r.xpEarned });
+          this.showToast(`+${r.xpEarned} XP earned!`);
         }
       },
-      error: () => this.submitting.set(false),
+      error: (err: HttpErrorResponse) => {
+        this.submitting.set(false);
+        const msg = err.error?.message ?? 'Submission failed. Please try again.';
+        this.submitError.set(msg);
+      },
     });
   }
 
-  askMentorForHelp(c: Challenge) {
-    this.leftTab.set('mentor');
+  private showToast(message: string) {
+    this.toastMessage.set(message);
+    setTimeout(() => this.toastMessage.set(null), 3000);
   }
 }

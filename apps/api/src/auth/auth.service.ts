@@ -49,6 +49,7 @@ export class AuthService {
     const matches = await bcrypt.compare(rawRefreshToken, user.refreshToken);
     if (!matches) throw new UnauthorizedException();
 
+    // Rotate: generate new token pair and invalidate the old one atomically
     return this.generateTokens(user.id, user.email, user.username);
   }
 
@@ -73,6 +74,7 @@ export class AuthService {
       }),
     ]);
 
+    // Store hashed refresh token — replaces previous token (rotation)
     const hashed = await bcrypt.hash(refreshToken, 10);
     await this.prisma.user.update({
       where: { id: userId },
@@ -88,6 +90,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         username: user.username,
+        role: user.role,
         xp: user.xp,
         level: user.level,
         streak: user.streak,

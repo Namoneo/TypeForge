@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -1713,6 +1714,18 @@ const achievements = [
 
 async function main() {
   console.log('Seeding TypeForge database…');
+
+  // Create default admin user (skip if already exists)
+  const adminEmail = process.env.ADMIN_EMAIL ?? 'admin@typeforge.dev';
+  const adminPassword = process.env.ADMIN_PASSWORD ?? 'Admin1234!';
+  const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
+  if (!existing) {
+    const hashed = await bcrypt.hash(adminPassword, 12);
+    await prisma.user.create({
+      data: { email: adminEmail, username: 'admin', password: hashed, role: Role.ADMIN },
+    });
+    console.log(`  ✓ Admin user: ${adminEmail}`);
+  }
 
   // Wipe and repopulate challenges (safe for development)
   await prisma.challengeAttempt.deleteMany({});

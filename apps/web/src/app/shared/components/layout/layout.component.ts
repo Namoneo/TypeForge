@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AppStore } from '../../../core/store/app.store';
 import { AuthService } from '../../../core/services/auth.service';
+import { RealtimeService } from '../../../core/services/realtime.service';
 
 @Component({
   selector: 'tf-layout',
@@ -26,6 +27,15 @@ import { AuthService } from '../../../core/services/auth.service';
               <span>{{ item.icon }}</span>
               <span>{{ item.label }}</span>
             </a>
+          }
+          @if (store.isAdmin()) {
+            <div class="mt-2 pt-2 border-t" style="border-color: var(--border)">
+              <a routerLink="/admin/challenges" routerLinkActive="nav-active"
+                 class="nav-item flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors">
+                <span>⚙</span>
+                <span>Admin</span>
+              </a>
+            </div>
           }
         </div>
 
@@ -62,9 +72,10 @@ import { AuthService } from '../../../core/services/auth.service';
     .nav-active { background: var(--bg-hover) !important; color: var(--text-primary) !important; }
   `],
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
   store = inject(AppStore);
   auth = inject(AuthService);
+  private realtime = inject(RealtimeService);
 
   navItems = [
     { path: '/dashboard', icon: '⊞', label: 'Dashboard' },
@@ -73,4 +84,8 @@ export class LayoutComponent {
     { path: '/learn', icon: '📚', label: 'Learning Tracks' },
     { path: '/leaderboard', icon: '🏆', label: 'Leaderboard' },
   ];
+
+  ngOnInit() {
+    this.realtime.connect();
+  }
 }

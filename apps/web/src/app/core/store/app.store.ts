@@ -4,6 +4,7 @@ export interface AuthUser {
   id: string;
   email: string;
   username: string;
+  role: string;
   xp: number;
   level: number;
   streak: number;
@@ -22,6 +23,7 @@ export class AppStore {
   readonly user = this._user.asReadonly();
   readonly token = this._token.asReadonly();
   readonly isLoggedIn = computed(() => this._user() !== null && this._token() !== null);
+  readonly isAdmin = computed(() => this._user()?.role === 'ADMIN');
   readonly displayName = computed(() => this._user()?.username ?? 'Guest');
   readonly xp = computed(() => this._user()?.xp ?? 0);
   readonly level = computed(() => this._user()?.level ?? 1);

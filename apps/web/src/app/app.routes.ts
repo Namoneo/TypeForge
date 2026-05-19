@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
@@ -22,6 +23,14 @@ export const routes: Routes = [
       { path: 'challenges/:id', loadComponent: () => import('./features/challenges/challenge-detail.component').then(m => m.ChallengeDetailComponent) },
       { path: 'learn', loadComponent: () => import('./features/learn/learn.component').then(m => m.LearnComponent) },
       { path: 'leaderboard', loadComponent: () => import('./features/leaderboard/leaderboard.component').then(m => m.LeaderboardComponent) },
+      {
+        path: 'admin',
+        canActivate: [adminGuard],
+        children: [
+          { path: 'challenges', loadComponent: () => import('./features/admin/admin-challenges.component').then(m => m.AdminChallengesComponent) },
+          { path: '', redirectTo: 'challenges', pathMatch: 'full' },
+        ],
+      },
     ],
   },
   { path: '**', redirectTo: '/dashboard' },

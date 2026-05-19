@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CompilerService } from '../compiler/compiler.service';
 import { Difficulty } from '@prisma/client';
-import { IsString, IsEnum, IsOptional, IsInt, IsArray, Min } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsInt, IsArray, IsBoolean, Min } from 'class-validator';
 
 export class CreateChallengeDto {
   @IsString() title: string;
@@ -14,6 +14,20 @@ export class CreateChallengeDto {
   testCases: Array<{ description: string; input?: string; expected: string }>;
   @IsOptional() @IsInt() @Min(1) xpReward?: number;
   @IsOptional() @IsArray() tags?: string[];
+  @IsOptional() @IsBoolean() published?: boolean;
+}
+
+export class UpdateChallengeDto {
+  @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsEnum(Difficulty) difficulty?: Difficulty;
+  @IsOptional() @IsString() track?: string;
+  @IsOptional() @IsString() starterCode?: string;
+  @IsOptional() @IsString() solutionCode?: string;
+  @IsOptional() testCases?: Array<{ description: string; input?: string; expected: string }>;
+  @IsOptional() @IsInt() @Min(1) xpReward?: number;
+  @IsOptional() @IsArray() tags?: string[];
+  @IsOptional() @IsBoolean() published?: boolean;
 }
 
 export class SubmitChallengeDto {
@@ -39,7 +53,19 @@ export class ChallengesService {
       select: {
         id: true, title: true, description: true,
         difficulty: true, track: true, xpReward: true,
-        tags: true, createdAt: true,
+        tags: true, order: true, createdAt: true,
+      },
+    });
+  }
+
+  // Admin-only: find all challenges regardless of published state
+  findAllAdmin() {
+    return this.prisma.challenge.findMany({
+      orderBy: [{ track: 'asc' }, { order: 'asc' }],
+      select: {
+        id: true, title: true, description: true,
+        difficulty: true, track: true, xpReward: true,
+        tags: true, order: true, published: true, createdAt: true,
       },
     });
   }
@@ -49,9 +75,16 @@ export class ChallengesService {
       where: { id, published: true },
     });
     if (!challenge) throw new NotFoundException('Challenge not found');
-    // Strip solution from response
+    // Strip solution from public response
     const { solutionCode: _, ...safe } = challenge;
     return safe;
+  }
+
+  // Admin-only: fetch with solution for editing
+  async findOneAdmin(id: string) {
+    const challenge = await this.prisma.challenge.findUnique({ where: { id } });
+    if (!challenge) throw new NotFoundException('Challenge not found');
+    return challenge;
   }
 
   create(dto: CreateChallengeDto) {
@@ -62,6 +95,25 @@ export class ChallengesService {
         tags: dto.tags ?? [],
       },
     });
+  }
+
+  async update(id: string, dto: UpdateChallengeDto) {
+    const challenge = await this.prisma.challenge.findUnique({ where: { id } });
+    if (!challenge) throw new NotFoundException('Challenge not found');
+    return this.prisma.challenge.update({
+      where: { id },
+      data: {
+        ...dto,
+        ...(dto.testCases && { testCases: dto.testCases as any }),
+      },
+    });
+  }
+
+  async remove(id: string) {
+    const challenge = await this.prisma.challenge.findUnique({ where: { id } });
+    if (!challenge) throw new NotFoundException('Challenge not found');
+    await this.prisma.challengeAttempt.deleteMany({ where: { challengeId: id } });
+    return this.prisma.challenge.delete({ where: { id } });
   }
 
   async submit(userId: string, dto: SubmitChallengeDto) {

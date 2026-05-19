@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as ts from 'typescript';
+import ivm from 'isolated-vm';
 
 export interface CompileResult {
   success: boolean;
@@ -43,8 +44,10 @@ const STRICT_OPTIONS: ts.CompilerOptions = {
   noEmitOnError: false,
   noImplicitAny: true,
   strictNullChecks: true,
-  lib: ['ES2022'],
 };
+
+const SANDBOX_TIMEOUT_MS = 2000;
+const SANDBOX_MEMORY_MB = 64;
 
 @Injectable()
 export class CompilerService {
@@ -128,29 +131,29 @@ export class CompilerService {
     let passedCount = 0;
 
     for (const tc of testCases) {
-      // Compile-only test: empty input means "passes if compilation succeeded"
       if (!tc.input?.trim()) {
         passedCount++;
         testResults.push({ description: tc.description, passed: true, expected: 'ok', actual: 'ok' });
         continue;
       }
 
-      try {
-        // Type-check based tests: evaluate expected type expressions
-        const testCode = `${compileResult.compiledJs}\n${tc.input}`;
-        // Run in an isolated eval scope — note: real sandbox would use vm2/isolated-vm
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(testCode);
-        const actual = String(fn() ?? '');
-        const pass = actual === tc.expected;
-        if (pass) passedCount++;
-        testResults.push({ description: tc.description, passed: pass, expected: tc.expected, actual });
-      } catch (err: any) {
+      const result = await this.runInSandbox(compileResult.compiledJs, tc.input);
+
+      if (result.error) {
         testResults.push({
           description: tc.description,
           passed: false,
           expected: tc.expected,
-          error: err?.message ?? 'Runtime error',
+          error: result.error,
+        });
+      } else {
+        const pass = result.value === tc.expected;
+        if (pass) passedCount++;
+        testResults.push({
+          description: tc.description,
+          passed: pass,
+          expected: tc.expected,
+          actual: result.value,
         });
       }
     }
@@ -163,6 +166,46 @@ export class CompilerService {
       errors: [],
       testResults,
     };
+  }
+
+  private async runInSandbox(
+    compiledJs: string,
+    testInput: string,
+  ): Promise<{ value?: string; error?: string }> {
+    const isolate = new ivm.Isolate({ memoryLimit: SANDBOX_MEMORY_MB });
+    try {
+      const context = await isolate.createContext();
+
+      // Wrap compiled code + test input in a function body so `return` works,
+      // matching the prior new Function() contract.
+      const script = await isolate.compileScript(
+        `(function() {\n${compiledJs}\n${testInput}\n})()`,
+      );
+
+      const raw = await script.run(context, { timeout: SANDBOX_TIMEOUT_MS });
+
+      // Primitives transfer directly; objects need JSON serialisation.
+      let value: string;
+      if (raw === null || raw === undefined) {
+        value = String(raw);
+      } else if (typeof raw === 'object') {
+        // raw is a Reference when the value is a non-transferable object
+        value = String(raw);
+      } else {
+        value = String(raw);
+      }
+
+      return { value };
+    } catch (err: any) {
+      const msg: string = err?.message ?? 'Runtime error';
+      // Normalise timeout message for consistent UX
+      if (msg.includes('Script execution timed out')) {
+        return { error: 'Execution timed out (2s limit)' };
+      }
+      return { error: msg };
+    } finally {
+      isolate.dispose();
+    }
   }
 
   private categoryName(cat: ts.DiagnosticCategory): DiagnosticInfo['category'] {
