@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  password     String
+  xp           Int      @default(0)
+  level        Int      @default(1)
+  streak       Int      @default(0)
+  lastActive   DateTime @default(now())
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  attempts     ChallengeAttempt[]
+  progress     TrackProgress[]
+  achievements UserAchievement[]
+
+  @@map("users")
+}
+
+model Challenge {
+  id           String     @id @default(cuid())
+  title        String
+  description  String     @db.Text
+  difficulty   Difficulty
+  track        String
+  starterCode  String     @db.Text
+  solutionCode String     @db.Text
+  testCases    Json
+  xpReward     Int        @default(10)
+  tags         String[]
+  order        Int        @default(0)
+  published    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  attempts     ChallengeAttempt[]
+
+  @@map("challenges")
+}
+
+model ChallengeAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  challengeId String
+  code        String   @db.Text
+  passed      Boolean
+  score       Int      @default(0)
+  errors      String[]
+  createdAt   DateTime @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@map("challenge_attempts")
+}
+
+model TrackProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  trackId     String
+  xpEarned    Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
+  @@map("track_progress")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  icon        String
+  xpReward    Int      @default(0)
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime    @default(now())
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
