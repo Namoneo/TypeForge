@@ -22,6 +22,7 @@ export class CreateChallengeDto {
   testCases: Array<{ description: string; input?: string; expected: string }>;
   @IsOptional() @IsInt() @Min(1) xpReward?: number;
   @IsOptional() @IsArray() tags?: string[];
+  @IsOptional() @IsArray() tips?: string[];
   @IsOptional() @IsBoolean() published?: boolean;
 }
 
@@ -39,6 +40,7 @@ export class UpdateChallengeDto {
   }>;
   @IsOptional() @IsInt() @Min(1) xpReward?: number;
   @IsOptional() @IsArray() tags?: string[];
+  @IsOptional() @IsArray() tips?: string[];
   @IsOptional() @IsBoolean() published?: boolean;
 }
 
@@ -118,6 +120,7 @@ export class ChallengesService {
         ...dto,
         testCases: dto.testCases as any,
         tags: dto.tags ?? [],
+        tips: dto.tips ?? [],
       },
     });
   }

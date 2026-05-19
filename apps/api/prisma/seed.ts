@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 const challenges = [
   // ─────────────────────────────────────────────────────────────────
-  // BEGINNER TRACK (12 challenges)
+  // BEGINNER TRACK (15 challenges)
   // ─────────────────────────────────────────────────────────────────
   {
     title: 'Hello TypeScript',
@@ -27,6 +27,11 @@ function greet(name) {
     ],
     xpReward: 10,
     tags: ['functions', 'annotations', 'strings'],
+    tips: [
+      'TypeScript type annotations use a colon after the parameter name. Try adding `: string` after `name`.',
+      'To annotate the return type, add `: string` between the closing `)` and the opening `{` of the function body.',
+      'The completed signature looks like: `function greet(name: string): string`',
+    ],
     published: true,
   },
   {
@@ -53,6 +58,11 @@ function clamp(value: number, min: number, max: number): number {
     ],
     xpReward: 10,
     tags: ['numbers', 'functions', 'conditionals'],
+    tips: [
+      'Think about three cases: value below min, value above max, or value already in range.',
+      'Use two early-return `if` statements to handle the out-of-range cases first.',
+      'Pattern: `if (value < min) return min; if (value > max) return max; return value;`',
+    ],
     published: true,
   },
   {
@@ -76,6 +86,11 @@ function sumArray(nums: number[]): number {
     ],
     xpReward: 10,
     tags: ['arrays', 'numbers', 'reduce'],
+    tips: [
+      'Arrays in TypeScript have all the same methods as JavaScript arrays — `.reduce()`, `.forEach()`, etc.',
+      '`Array.prototype.reduce` with an initial value of `0` handles the empty array case automatically.',
+      'Try: `return nums.reduce((acc, n) => acc + n, 0);`',
+    ],
     published: true,
   },
   {
@@ -98,6 +113,11 @@ function swap(pair: [string, number]): [number, string] {
     ],
     xpReward: 12,
     tags: ['tuples', 'arrays', 'types'],
+    tips: [
+      'Tuples are accessed by index, just like arrays — use `pair[0]` and `pair[1]`.',
+      'Return a new array literal with the positions swapped.',
+      'The complete solution: `return [pair[1], pair[0]];`',
+    ],
     published: true,
   },
   {
@@ -129,6 +149,11 @@ function distance(p: Point): number {
     ],
     xpReward: 12,
     tags: ['interfaces', 'objects', 'math'],
+    tips: [
+      'Interface properties use `propertyName: Type;` syntax. Add `x: number;` and `y: number;` inside the interface body.',
+      'Access object properties with dot notation: `p.x` and `p.y`.',
+      'The Pythagorean formula: `Math.sqrt(p.x * p.x + p.y * p.y)`',
+    ],
     published: true,
   },
   {
@@ -166,6 +191,11 @@ function formatUser(u: User): string {
     ],
     xpReward: 12,
     tags: ['interfaces', 'optional', 'objects'],
+    tips: [
+      'Mark a property optional with `?` after its name: `age?: number;`',
+      'Check for an optional property with `u.age !== undefined` — don\'t use `if (u.age)` because that would fail for `age: 0`.',
+      'Pattern: `if (u.age !== undefined) return u.name + " (" + u.age + ")"; return u.name;`',
+    ],
     published: true,
   },
   {
@@ -189,6 +219,11 @@ function formatId(id: string | number): string {
     ],
     xpReward: 12,
     tags: ['unions', 'strings', 'types'],
+    tips: [
+      'The `|` operator means "or" — `string | number` accepts either type.',
+      'String concatenation `+` automatically coerces numbers to strings, so the same code works for both.',
+      'Simplest solution: `return "ID:" + id;` or use a template literal `` `ID:${id}` ``',
+    ],
     published: true,
   },
   {
@@ -230,6 +265,11 @@ function introduce(p: Person): string {
     ],
     xpReward: 14,
     tags: ['intersections', 'interfaces', 'types'],
+    tips: [
+      'Fill in `Named` with `name: string;` and `Aged` with `age: number;`',
+      'The `&` operator combines types — `Named & Aged` requires BOTH name and age properties.',
+      'Build the string with concatenation: `"Hi, I am " + p.name + " and I am " + p.age + " years old."`',
+    ],
     published: true,
   },
   {
@@ -255,6 +295,11 @@ function describe(value: string | number | boolean): string {
     ],
     xpReward: 14,
     tags: ['narrowing', 'typeof', 'unions'],
+    tips: [
+      'Use the `typeof` operator: `typeof value === "string"` returns true if value is a string.',
+      'Chain `if` statements for each type. TypeScript narrows the type inside each branch.',
+      'Pattern: `if (typeof value === "string") return "string: " + value;` then number, then default to boolean.',
+    ],
     published: true,
   },
   {
@@ -294,6 +339,11 @@ function opposite(d: Direction): Direction {
     ],
     xpReward: 15,
     tags: ['enums', 'switch', 'strings'],
+    tips: [
+      'String enums assign explicit values: `Up = "UP", Down = "DOWN", Left = "LEFT", Right = "RIGHT"`',
+      'Use a `switch (d)` statement with cases for each Direction value.',
+      'Each case returns the opposite: Up→Down, Down→Up, Left→Right, Right→Left.',
+    ],
     published: true,
   },
   {
@@ -331,6 +381,11 @@ function align(
     ],
     xpReward: 15,
     tags: ['literal-types', 'strings', 'padding'],
+    tips: [
+      'Calculate the padding amount first: `const pad = width - text.length;`. Return text unchanged if pad ≤ 0.',
+      'Use `" ".repeat(n)` to build padding. For "left", append; for "right", prepend.',
+      'For "center", split: `const left = Math.floor(pad / 2); const right = pad - left;` then sandwich the text.',
+    ],
     published: true,
   },
   {
@@ -360,11 +415,108 @@ function scale(factor: number): Transform {
     ],
     xpReward: 15,
     tags: ['type-aliases', 'tuples', 'higher-order'],
+    tips: [
+      'Define type aliases with the `type` keyword: `type Coordinates = [number, number];`',
+      '`Transform` is a function type: `type Transform = (c: Coordinates) => Coordinates;`',
+      '`scale` returns a closure: `return (c) => [c[0] * factor, c[1] * factor];`',
+    ],
+    published: true,
+  },
+  {
+    title: 'Nullish Coalescing',
+    description: 'Implement `getDisplayName(user: { name?: string; nickname?: string } | null): string` that returns the nickname if present, otherwise the name, otherwise `"Anonymous"`.\n\nUse the nullish coalescing operator `??` and optional chaining `?.` to handle null/undefined safely.',
+    difficulty: 'BEGINNER',
+    track: 'beginner',
+    order: 13,
+    starterCode: `// Use ?? and ?. to safely handle missing values
+function getDisplayName(user: { name?: string; nickname?: string } | null): string {
+  // your code here
+}`,
+    solutionCode: `function getDisplayName(user: { name?: string; nickname?: string } | null): string {
+  return user?.nickname ?? user?.name ?? 'Anonymous';
+}`,
+    testCases: [
+      { description: 'Returns nickname when present', input: 'return getDisplayName({ name: "Alice", nickname: "Ally" })', expected: 'Ally' },
+      { description: 'Falls back to name', input: 'return getDisplayName({ name: "Bob" })', expected: 'Bob' },
+      { description: 'Falls back to Anonymous when both missing', input: 'return getDisplayName({})', expected: 'Anonymous' },
+      { description: 'Handles null user', input: 'return getDisplayName(null)', expected: 'Anonymous' },
+    ],
+    xpReward: 14,
+    tags: ['nullish-coalescing', 'optional-chaining', 'beginner'],
+    tips: [
+      'Optional chaining `user?.nickname` returns undefined safely if user is null.',
+      'The nullish coalescing operator `??` provides a fallback only for null/undefined (not for "" or 0).',
+      'Chain them: `return user?.nickname ?? user?.name ?? "Anonymous";`',
+    ],
+    published: true,
+  },
+  {
+    title: 'Array Filter and Find',
+    description: 'Implement two functions on typed arrays:\n- `firstEven(nums: number[]): number | undefined` — returns the first even number, or undefined if none\n- `onlyEvens(nums: number[]): number[]` — returns all even numbers\n\nUse `.find()` and `.filter()` methods.',
+    difficulty: 'BEGINNER',
+    track: 'beginner',
+    order: 14,
+    starterCode: `// Implement firstEven and onlyEvens using array methods
+function firstEven(nums: number[]): number | undefined {
+  // your code here
+}
+
+function onlyEvens(nums: number[]): number[] {
+  // your code here
+}`,
+    solutionCode: `function firstEven(nums: number[]): number | undefined {
+  return nums.find((n) => n % 2 === 0);
+}
+
+function onlyEvens(nums: number[]): number[] {
+  return nums.filter((n) => n % 2 === 0);
+}`,
+    testCases: [
+      { description: 'firstEven returns first match', input: 'return firstEven([1, 3, 4, 5, 6])', expected: '4' },
+      { description: 'firstEven returns undefined when none', input: 'return String(firstEven([1, 3, 5]))', expected: 'undefined' },
+      { description: 'onlyEvens filters correctly', input: 'return onlyEvens([1, 2, 3, 4, 5, 6]).join(",")', expected: '2,4,6' },
+      { description: 'onlyEvens returns empty when no matches', input: 'return JSON.stringify(onlyEvens([1, 3, 5]))', expected: '[]' },
+    ],
+    xpReward: 14,
+    tags: ['arrays', 'filter', 'find', 'beginner'],
+    tips: [
+      '`.find()` returns the first matching element or `undefined` — perfect for `firstEven`.',
+      '`.filter()` returns a new array of all matching elements — use it for `onlyEvens`.',
+      'Check evenness with `n % 2 === 0`. Try: `nums.find(n => n % 2 === 0)` and `nums.filter(n => n % 2 === 0)`.',
+    ],
+    published: true,
+  },
+  {
+    title: 'Object Spread',
+    description: 'Implement `mergeDefaults<T extends object>(defaults: T, overrides: Partial<T>): T` that merges two objects, with values in `overrides` taking precedence.\n\nUse the spread operator `...` to combine objects.',
+    difficulty: 'BEGINNER',
+    track: 'beginner',
+    order: 15,
+    starterCode: `// Implement mergeDefaults using the spread operator
+function mergeDefaults<T extends object>(defaults: T, overrides: Partial<T>): T {
+  // your code here
+}`,
+    solutionCode: `function mergeDefaults<T extends object>(defaults: T, overrides: Partial<T>): T {
+  return { ...defaults, ...overrides };
+}`,
+    testCases: [
+      { description: 'Overrides take precedence', input: 'return mergeDefaults({ a: 1, b: 2 }, { b: 99 }).b', expected: '99' },
+      { description: 'Defaults preserved when not overridden', input: 'return mergeDefaults({ a: 1, b: 2 }, { b: 99 }).a', expected: '1' },
+      { description: 'Empty overrides keeps all defaults', input: 'return JSON.stringify(mergeDefaults({ x: 10 }, {}))', expected: '{"x":10}' },
+      { description: 'String values', input: 'return mergeDefaults({ name: "default" }, { name: "custom" }).name', expected: 'custom' },
+    ],
+    xpReward: 15,
+    tags: ['spread', 'objects', 'generics', 'beginner'],
+    tips: [
+      'The spread operator `...` copies enumerable properties from an object.',
+      'Order matters: later properties override earlier ones. Put defaults first, overrides second.',
+      'The solution is a one-liner: `return { ...defaults, ...overrides };`',
+    ],
     published: true,
   },
 
   // ─────────────────────────────────────────────────────────────────
-  // INTERMEDIATE TRACK (12 challenges)
+  // INTERMEDIATE TRACK (15 challenges)
   // ─────────────────────────────────────────────────────────────────
   {
     title: 'Generic Identity',
@@ -386,6 +538,11 @@ function identity(arg: any): any {
     ],
     xpReward: 20,
     tags: ['generics', 'functions', 'types'],
+    tips: [
+      'Add a type parameter `<T>` immediately after the function name.',
+      'Replace both `any` occurrences with the type parameter `T`.',
+      'Full signature: `function identity<T>(arg: T): T`',
+    ],
     published: true,
   },
   {
@@ -425,6 +582,11 @@ class Stack<T> {
     ],
     xpReward: 22,
     tags: ['generics', 'classes', 'data-structures'],
+    tips: [
+      'Store items in a private field of type `T[]`: `private items: T[] = [];`',
+      '`push` and `pop` can delegate directly to the underlying array methods.',
+      'Use a getter for `size`: `get size(): number { return this.items.length; }`. `peek` returns the last element.',
+    ],
     published: true,
   },
   {
@@ -447,6 +609,11 @@ function getProperty(obj: any, key: any): any {
     ],
     xpReward: 25,
     tags: ['generics', 'keyof', 'constraints'],
+    tips: [
+      'Add two type parameters: `<T, K extends keyof T>`. The constraint ensures K is a valid key of T.',
+      'Replace parameter types: `obj: T, key: K`.',
+      'The return type uses indexed access: `T[K]` gives the type of the value at key K.',
+    ],
     published: true,
   },
   {
@@ -481,6 +648,11 @@ function updateUser(user: User, changes: Partial<User>): User {
     ],
     xpReward: 22,
     tags: ['utility-types', 'partial', 'generics'],
+    tips: [
+      'Replace `changes: any` with `changes: Partial<User>` to allow any subset of User fields.',
+      'Use object spread to merge — later properties override earlier ones.',
+      'Solution: `return { ...user, ...changes };`',
+    ],
     published: true,
   },
   {
@@ -503,6 +675,11 @@ function freeze<T>(obj: T): any {
     ],
     xpReward: 20,
     tags: ['utility-types', 'readonly', 'generics'],
+    tips: [
+      'Only the return type annotation needs to change — the body is already correct.',
+      'Replace `any` with `Readonly<T>` to match what `Object.freeze` conceptually returns.',
+      '`Readonly<T>` is a built-in utility equivalent to `{ readonly [K in keyof T]: T[K] }`.',
+    ],
     published: true,
   },
   {
@@ -546,6 +723,11 @@ function publicUser(user: User): Omit<User, 'password'> {
     ],
     xpReward: 25,
     tags: ['utility-types', 'pick', 'omit'],
+    tips: [
+      'For `pickName`, just concatenate: `user.name + " <" + user.email + ">"`.',
+      'For `publicUser`, use destructuring with rest: `const { password, ...rest } = user;`',
+      'Return `rest` — it has all of `user`\'s properties except `password`.',
+    ],
     published: true,
   },
   {
@@ -575,6 +757,11 @@ function groupByFirst(words: string[]): Record<string, string[]> {
     ],
     xpReward: 25,
     tags: ['record', 'utility-types', 'objects'],
+    tips: [
+      'Initialize an empty result: `const result: Record<string, string[]> = {};`',
+      'For each word, get the first character with `word[0]`, then initialize the array if missing.',
+      'Use the pattern: `if (!result[key]) result[key] = []; result[key].push(word);`',
+    ],
     published: true,
   },
   {
@@ -599,6 +786,11 @@ function logged<F extends (...args: any[]) => any>(fn: F): (...args: Parameters<
     ],
     xpReward: 28,
     tags: ['utility-types', 'return-type', 'parameters', 'generics'],
+    tips: [
+      'Return an arrow function with rest parameters: `(...args) => { ... }`',
+      'Inside, log first with `console.log("calling " + fn.name);`',
+      'Then call the original function with spread args: `return fn(...args);`',
+    ],
     published: true,
   },
   {
@@ -624,6 +816,11 @@ const _b: NullableUser = { name: 'Alice', age: 30 };`,
     ],
     xpReward: 28,
     tags: ['mapped-types', 'nullable', 'generics'],
+    tips: [
+      'Mapped types iterate over keys using `[K in keyof T]`.',
+      'For each key, transform the value type. Here, allow `T[K]` OR `null`.',
+      'Full implementation: `type Nullable<T> = { [K in keyof T]: T[K] | null };`',
+    ],
     published: true,
   },
   {
@@ -659,6 +856,11 @@ function count(text: string): Dictionary<number> {
     ],
     xpReward: 25,
     tags: ['index-signatures', 'generics', 'objects'],
+    tips: [
+      'Index signature syntax: `[key: string]: V;` — allows any string key mapping to type V.',
+      'Initialize `const result: Dictionary<number> = {};`',
+      'For each character: `result[ch] = (result[ch] || 0) + 1;` — handles missing keys with `|| 0`.',
+    ],
     published: true,
   },
   {
@@ -687,6 +889,11 @@ function parse(value: any): any {
     ],
     xpReward: 28,
     tags: ['overloads', 'functions', 'types'],
+    tips: [
+      'Add the second overload before the implementation: `function parse(value: number): string;`',
+      'Overload signatures define the public API — only the implementation runs at runtime.',
+      'The implementation already handles both cases correctly using `typeof`.',
+    ],
     published: true,
   },
   {
@@ -721,11 +928,132 @@ function pick<T, K extends keyof T>(obj: T, ks: K[]): Pick<T, K> {
     ],
     xpReward: 28,
     tags: ['keyof', 'typeof', 'generics', 'utility-types'],
+    tips: [
+      'For `keys`: `Object.keys()` returns `string[]` — cast it: `Object.keys(obj) as Array<keyof T>`.',
+      'For `pick`: initialize an empty result with the right type: `const result = {} as Pick<T, K>;`',
+      'Loop over `ks` and copy each property: `for (const k of ks) result[k] = obj[k];`',
+    ],
+    published: true,
+  },
+  {
+    title: 'Required<T>',
+    description: 'Implement `assertComplete<T>(partial: Partial<T>, defaults: T): T` that takes a partial object and fills in any missing fields from the defaults.\n\n`Required<T>` is the opposite of `Partial<T>` — it makes all optional properties required.',
+    difficulty: 'INTERMEDIATE',
+    track: 'intermediate',
+    order: 13,
+    starterCode: `// Use spread to combine defaults with partial overrides
+function assertComplete<T>(partial: Partial<T>, defaults: T): T {
+  // your code here
+}
+
+// Compile guard: verify Required works
+type Config = { host?: string; port?: number };
+type StrictConfig = Required<Config>;
+const _c: StrictConfig = { host: 'localhost', port: 3000 };`,
+    solutionCode: `function assertComplete<T>(partial: Partial<T>, defaults: T): T {
+  return { ...defaults, ...partial };
+}
+
+type Config = { host?: string; port?: number };
+type StrictConfig = Required<Config>;
+const _c: StrictConfig = { host: 'localhost', port: 3000 };`,
+    testCases: [
+      { description: 'Fills missing fields', input: 'return assertComplete({ host: "x" }, { host: "default", port: 80 }).port', expected: '80' },
+      { description: 'Partial overrides defaults', input: 'return assertComplete({ host: "custom" }, { host: "default", port: 80 }).host', expected: 'custom' },
+      { description: 'Empty partial uses all defaults', input: 'return JSON.stringify(assertComplete({}, { a: 1, b: 2 }))', expected: '{"a":1,"b":2}' },
+    ],
+    xpReward: 25,
+    tags: ['required', 'partial', 'utility-types', 'intermediate'],
+    tips: [
+      '`Required<T>` makes every optional property mandatory — the inverse of `Partial<T>`.',
+      'Merge defaults with the partial using spread: `{ ...defaults, ...partial }`.',
+      'Defaults come first so partial values override them, ensuring all keys are present.',
+    ],
+    published: true,
+  },
+  {
+    title: 'Generic Queue',
+    description: 'Implement a `Queue<T>` class (FIFO: First In, First Out) with:\n- `enqueue(item: T): void` — add to the back\n- `dequeue(): T | undefined` — remove and return the front item\n- `peek(): T | undefined` — return front without removing\n- `size: number` getter',
+    difficulty: 'INTERMEDIATE',
+    track: 'intermediate',
+    order: 14,
+    starterCode: `// Implement a generic Queue<T> (FIFO)
+class Queue<T> {
+  // your code here
+}`,
+    solutionCode: `class Queue<T> {
+  private items: T[] = [];
+
+  enqueue(item: T): void {
+    this.items.push(item);
+  }
+
+  dequeue(): T | undefined {
+    return this.items.shift();
+  }
+
+  peek(): T | undefined {
+    return this.items[0];
+  }
+
+  get size(): number {
+    return this.items.length;
+  }
+}`,
+    testCases: [
+      { description: 'FIFO order', input: 'const q = new Queue(); q.enqueue(1); q.enqueue(2); return q.dequeue()', expected: '1' },
+      { description: 'Peek does not remove', input: 'const q = new Queue(); q.enqueue("a"); q.peek(); return q.size', expected: '1' },
+      { description: 'Dequeue empty returns undefined', input: 'const q = new Queue(); return String(q.dequeue())', expected: 'undefined' },
+      { description: 'Size tracks items', input: 'const q = new Queue(); q.enqueue(1); q.enqueue(2); q.dequeue(); return q.size', expected: '1' },
+    ],
+    xpReward: 25,
+    tags: ['generics', 'classes', 'data-structures', 'queue'],
+    tips: [
+      'A queue is FIFO (first in, first out) — the opposite of a stack.',
+      'Use `Array.prototype.push` to enqueue (add to back) and `Array.prototype.shift` to dequeue (remove from front).',
+      '`peek` returns `this.items[0]` (the front), and `size` is a getter for `this.items.length`.',
+    ],
+    published: true,
+  },
+  {
+    title: 'Awaited<T>',
+    description: 'Use the built-in `Awaited<T>` utility to extract the resolved type from a Promise. Implement `unwrap<T>(p: Promise<T>): Promise<Awaited<T>>` that returns a promise of the resolved value.\n\nAlso implement `chainAll<T>(promises: Promise<T>[]): Promise<T[]>` that resolves all promises in order.',
+    difficulty: 'INTERMEDIATE',
+    track: 'intermediate',
+    order: 15,
+    starterCode: `// Use Awaited<T> to unwrap nested promise types
+async function unwrap<T>(p: Promise<T>): Promise<Awaited<T>> {
+  // your code here
+}
+
+async function chainAll<T>(promises: Promise<T>[]): Promise<T[]> {
+  // your code here
+}`,
+    solutionCode: `async function unwrap<T>(p: Promise<T>): Promise<Awaited<T>> {
+  return await p;
+}
+
+async function chainAll<T>(promises: Promise<T>[]): Promise<T[]> {
+  return Promise.all(promises);
+}`,
+    testCases: [
+      { description: 'unwrap resolves the value', input: 'return unwrap(Promise.resolve(42)).then(v => v)', expected: '42' },
+      { description: 'unwrap with string', input: 'return unwrap(Promise.resolve("hello")).then(v => v)', expected: 'hello' },
+      { description: 'chainAll resolves all', input: 'return chainAll([Promise.resolve(1), Promise.resolve(2)]).then(arr => arr.join(","))', expected: '1,2' },
+      { description: 'chainAll with empty array', input: 'return chainAll([]).then(arr => arr.length)', expected: '0' },
+    ],
+    xpReward: 28,
+    tags: ['awaited', 'promises', 'async', 'intermediate'],
+    tips: [
+      '`Awaited<T>` recursively unwraps nested Promise types — `Awaited<Promise<Promise<string>>>` is `string`.',
+      'For `unwrap`, simply `await` the promise inside the async function — the type annotation does the rest.',
+      'For `chainAll`, use the built-in `Promise.all(promises)` which returns `Promise<T[]>`.',
+    ],
     published: true,
   },
 
   // ─────────────────────────────────────────────────────────────────
-  // ADVANCED TRACK (10 challenges)
+  // ADVANCED TRACK (12 challenges)
   // ─────────────────────────────────────────────────────────────────
   {
     title: 'Conditional Types',
@@ -760,6 +1088,11 @@ function isArray(val: unknown): boolean {
     ],
     xpReward: 40,
     tags: ['conditional-types', 'generics', 'advanced'],
+    tips: [
+      'Conditional types follow the pattern: `T extends SomeType ? TrueType : FalseType`.',
+      'To check if T is any array, use `T extends any[] ? true : false`.',
+      'The runtime function just uses `Array.isArray(val)`.',
+    ],
     published: true,
   },
   {
@@ -789,6 +1122,11 @@ const _b: B = 42;`,
     ],
     xpReward: 45,
     tags: ['infer', 'conditional-types', 'promises', 'advanced'],
+    tips: [
+      '`infer` is only valid inside the extends clause of a conditional type.',
+      'Pattern: `T extends Promise<infer R> ? R : T` — captures R as the type inside the Promise.',
+      'If T isn\'t a Promise, fall through to `T` (unchanged).',
+    ],
     published: true,
   },
   {
@@ -812,6 +1150,11 @@ const _change: EventName<'change'> = 'onChange';`,
     ],
     xpReward: 45,
     tags: ['template-literal-types', 'capitalize', 'advanced'],
+    tips: [
+      'Template literal types use backticks at the type level: `` `prefix${T}suffix` ``',
+      '`Capitalize<T>` is a built-in intrinsic that uppercases the first letter of a string type.',
+      'Solution: `` type EventName<T extends string> = `on${Capitalize<T>}`; ``',
+    ],
     published: true,
   },
   {
@@ -840,6 +1183,11 @@ const _cfg: RConfig = { server: { host: 'localhost', port: 3000 }, debug: false 
     ],
     xpReward: 50,
     tags: ['mapped-types', 'recursive', 'readonly', 'advanced'],
+    tips: [
+      'Start with the shape of `Readonly<T>`: `{ readonly [K in keyof T]: T[K] }`.',
+      'Add recursion via a conditional check: `T[K] extends object ? DeepReadonly<T[K]> : T[K]`.',
+      'Recursive types reference themselves by name — TypeScript handles the recursion lazily.',
+    ],
     published: true,
   },
   {
@@ -877,6 +1225,11 @@ const _c2: C = 99;`,
     ],
     xpReward: 50,
     tags: ['conditional-types', 'distributive', 'infer', 'advanced'],
+    tips: [
+      'Combine conditional types with `infer`: `T extends (infer U)[] ? U : T`.',
+      'When T is a naked type parameter in a union, the conditional distributes: `Flatten<A | B> = Flatten<A> | Flatten<B>`.',
+      'So `Flatten<string[] | number[]>` becomes `string | number` automatically.',
+    ],
     published: true,
   },
   {
@@ -910,6 +1263,11 @@ const _x2: X1 = 'b';`,
     ],
     xpReward: 50,
     tags: ['conditional-types', 'exclude', 'extract', 'advanced'],
+    tips: [
+      'Conditional types distribute over union type parameters automatically.',
+      '`MyExclude<T, U> = T extends U ? never : T` — `never` is removed from unions, effectively excluding matches.',
+      '`MyExtract<T, U> = T extends U ? T : never` — keeps only types assignable to U.',
+    ],
     published: true,
   },
   {
@@ -937,6 +1295,11 @@ function compact<T>(arr: (T | null | undefined)[]): T[] {
     ],
     xpReward: 45,
     tags: ['nonnullable', 'conditional-types', 'filtering', 'advanced'],
+    tips: [
+      '`MyNonNullable<T> = T extends null | undefined ? never : T` — removes both nullish types via distribution.',
+      'For `compact`, use `.filter()` with a type predicate: `(x): x is T => x !== null && x !== undefined`.',
+      'The `is T` predicate narrows the result type so TypeScript knows the array is `T[]` (no nullish).',
+    ],
     published: true,
   },
   {
@@ -981,6 +1344,11 @@ function area(shape: Shape): number {
     ],
     xpReward: 55,
     tags: ['discriminated-unions', 'exhaustive', 'switch', 'advanced'],
+    tips: [
+      'Switch on `shape.kind` — TypeScript narrows the type in each case automatically.',
+      'Areas: circle = `Math.PI * shape.radius ** 2`, rectangle = `shape.width * shape.height`, triangle = `0.5 * shape.base * shape.height`.',
+      'Add `default: { const _e: never = shape; return _e; }` to enforce exhaustiveness at compile time.',
+    ],
     published: true,
   },
   {
@@ -1017,6 +1385,11 @@ const _redGreen: number = palette.red[1];`,
     ],
     xpReward: 45,
     tags: ['satisfies', 'record', 'advanced'],
+    tips: [
+      'Add `satisfies Palette` directly after the closing `}` of the object literal.',
+      'Unlike `as Palette`, `satisfies` validates without widening the inferred type — literal types are preserved.',
+      'This is why `palette.red[1]` is allowed: TypeScript still knows `red` is `[number, number, number]`, not `string | tuple`.',
+    ],
     published: true,
   },
   {
@@ -1048,11 +1421,76 @@ const _c: PartialConfig = { db: { host: 'localhost' } };`,
     ],
     xpReward: 60,
     tags: ['mapped-types', 'recursive', 'partial', 'advanced'],
+    tips: [
+      'Very similar to `DeepReadonly` — use `?` instead of `readonly` to make properties optional.',
+      'Recurse when the value is an object: `T[K] extends object ? DeepPartial<T[K]> : T[K]`.',
+      'Full type: `type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K]; };`',
+    ],
+    published: true,
+  },
+  {
+    title: 'String Intrinsic Manipulation',
+    description: 'Use the built-in string manipulation types `Uppercase<T>`, `Lowercase<T>`, `Capitalize<T>`, and `Uncapitalize<T>`.\n\nImplement `CSSVar<T extends string>` that produces a CSS custom property by prefixing `"--"` and lowercasing the first character. For example, `CSSVar<"Color">` → `"--color"`.\n\nAlso define `Greeting<Name extends string>` that produces `` `Hello, ${Capitalize<Name>}!` ``',
+    difficulty: 'ADVANCED',
+    track: 'advanced',
+    order: 11,
+    starterCode: `// Use built-in string manipulation intrinsic types
+type CSSVar<T extends string> = never; // "--" + Uncapitalize<T>
+type Greeting<Name extends string> = never;
+
+// Compile guards (do not remove)
+const _v: CSSVar<'Color'> = '--color';
+const _g: Greeting<'alice'> = 'Hello, Alice!';`,
+    solutionCode: `type CSSVar<T extends string> = \`--\${Uncapitalize<T>}\`;
+type Greeting<Name extends string> = \`Hello, \${Capitalize<Name>}!\`;
+
+const _v: CSSVar<'Color'> = '--color';
+const _g: Greeting<'alice'> = 'Hello, Alice!';`,
+    testCases: [
+      { description: 'Type compiles without errors', input: '', expected: 'ok' },
+    ],
+    xpReward: 50,
+    tags: ['template-literal-types', 'string-manipulation', 'advanced'],
+    tips: [
+      'TypeScript ships four intrinsic string types: `Uppercase<T>`, `Lowercase<T>`, `Capitalize<T>`, `Uncapitalize<T>`.',
+      'Combine them with template literals using backticks at the type level.',
+      'For `CSSVar`: `` `--${Uncapitalize<T>}` ``. For `Greeting`: `` `Hello, ${Capitalize<Name>}!` ``',
+    ],
+    published: true,
+  },
+  {
+    title: 'Tuple Length',
+    description: 'Implement `Length<T extends readonly any[]>` that resolves to the literal length of a tuple type.\n\nFor `["a", "b", "c"]`, the length should be `3` as a literal type.\n\nHint: tuple types have a `length` property whose type is the literal length.',
+    difficulty: 'ADVANCED',
+    track: 'advanced',
+    order: 12,
+    starterCode: `// Implement Length<T> for tuple types
+type Length<T extends readonly any[]> = never; // replace with your implementation
+
+// Compile guards (do not remove)
+const _l3: Length<['a', 'b', 'c']> = 3;
+const _l0: Length<[]> = 0;
+const _l1: Length<[number]> = 1;`,
+    solutionCode: `type Length<T extends readonly any[]> = T['length'];
+
+const _l3: Length<['a', 'b', 'c']> = 3;
+const _l0: Length<[]> = 0;
+const _l1: Length<[number]> = 1;`,
+    testCases: [
+      { description: 'Type compiles without errors', input: '', expected: 'ok' },
+    ],
+    xpReward: 55,
+    tags: ['tuples', 'indexed-access', 'advanced'],
+    tips: [
+      'Tuple types have a `length` property whose value is the literal number.',
+      'Use indexed access: `T["length"]` gives you the literal length type.',
+      'Solution: `type Length<T extends readonly any[]> = T["length"];`',
+    ],
     published: true,
   },
 
   // ─────────────────────────────────────────────────────────────────
-  // EXPERT TRACK (8 challenges)
+  // EXPERT TRACK (9 challenges)
   // ─────────────────────────────────────────────────────────────────
   {
     title: 'Branded Types',
@@ -1092,6 +1530,11 @@ function createProductId(s: string): ProductId {
     ],
     xpReward: 75,
     tags: ['branded-types', 'type-safety', 'expert'],
+    tips: [
+      '`Brand<T, B>` intersects T with a unique tag: `T & { readonly __brand: B }`.',
+      'The `__brand` property exists only at the type level — it has no runtime cost.',
+      'Use a cast to construct branded values: `return s as UserId;`',
+    ],
     published: true,
   },
   {
@@ -1121,6 +1564,11 @@ const _b: B = '100';`,
     ],
     xpReward: 80,
     tags: ['template-literal-types', 'infer', 'expert'],
+    tips: [
+      'You can place `infer` inside template literal patterns in conditional types.',
+      'Pattern: `` S extends `${infer N}px` ? N : never `` — captures everything before "px" as N.',
+      'Strings that don\'t end in "px" fail the extends check and fall through to `never`.',
+    ],
     published: true,
   },
   {
@@ -1143,6 +1591,11 @@ function concat<A extends any[], B extends any[]>(a: A, b: B): [...A, ...B] {
     ],
     xpReward: 80,
     tags: ['variadic-tuples', 'generics', 'expert'],
+    tips: [
+      'Variadic tuple spread `[...A, ...B]` works in both value and type positions.',
+      'The runtime is just `[...a, ...b]` — spread two arrays.',
+      'TypeScript can\'t infer the variadic return, so add a cast: `as [...A, ...B]`.',
+    ],
     published: true,
   },
   {
@@ -1174,6 +1627,11 @@ class Builder<T extends object> {
     ],
     xpReward: 85,
     tags: ['builder-pattern', 'generics', 'classes', 'expert'],
+    tips: [
+      'Store accumulated data as `private data: Partial<T> = {};`',
+      'The `set` method uses `K extends keyof T` for type safety, and returns `this` to enable chaining.',
+      '`build()` casts to `T`: `return this.data as T;`',
+    ],
     published: true,
   },
   {
@@ -1221,6 +1679,11 @@ function filterNumbers(arr: unknown[]): number[] {
     ],
     xpReward: 75,
     tags: ['type-guards', 'predicates', 'narrowing', 'expert'],
+    tips: [
+      'A type predicate has the return type `val is Type` — TypeScript uses this to narrow types after the function returns true.',
+      'The implementation uses `typeof val === "string"` and `typeof val === "number"`.',
+      'Pass the type guard directly to `.filter()`: `arr.filter(isString)` — TypeScript infers the narrowed return type.',
+    ],
     published: true,
   },
   {
@@ -1265,6 +1728,11 @@ function isValidConfig(v: string): boolean {
     ],
     xpReward: 80,
     tags: ['const-assertions', 'literal-types', 'keyof', 'expert'],
+    tips: [
+      'Add `as const` immediately after the closing `}` of the object literal — this preserves literal types.',
+      '`typeof config` gives the object\'s type; `keyof typeof config` gives the union of keys.',
+      'Indexed access: `typeof config[keyof typeof config]` gives the union of all value types.',
+    ],
     published: true,
   },
   {
@@ -1304,6 +1772,11 @@ _n.a.b = 99;`,
     ],
     xpReward: 90,
     tags: ['mapped-types', 'mutable', 'readonly', 'recursive', 'expert'],
+    tips: [
+      'Use the `-readonly` modifier to strip readonly: `{ -readonly [K in keyof T]: T[K] }`.',
+      'The `-` prefix on modifiers means "remove" — so `-readonly` removes readonly, and `-?` removes optional.',
+      '`DeepMutable` adds recursion: `T[K] extends object ? DeepMutable<T[K]> : T[K]`.',
+    ],
     published: true,
   },
   {
@@ -1344,6 +1817,59 @@ const _t1: OrderTransition = { from: 'Draft', event: 'place', to: 'Placed' };`,
     ],
     xpReward: 100,
     tags: ['state-machine', 'conditional-types', 'literal-types', 'expert'],
+    tips: [
+      '`OrderTransition` is a union of specific `Transition<...>` types — one variant per valid edge.',
+      'Combine with `|`: each variant is a fully-specified transition tuple.',
+      'Build the chain: `Transition<"Draft", "place", "Placed"> | Transition<"Placed", "ship", "Shipped"> | Transition<"Shipped", "deliver", "Delivered">`',
+    ],
+    published: true,
+  },
+  {
+    title: 'Phantom Type Parameters',
+    description: 'Implement phantom-typed `Distance` values that track the unit at the type level only.\n\nGiven `type Distance<U extends "m" | "km"> = number & { readonly __unit?: U }`, implement:\n- `meters(n: number): Distance<"m">`\n- `kilometers(n: number): Distance<"km">`\n- `addMeters(a: Distance<"m">, b: Distance<"m">): Distance<"m">`\n\nThe key idea: TypeScript prevents mixing units at compile time, but at runtime each value is just a `number`.',
+    difficulty: 'EXPERT',
+    track: 'expert',
+    order: 9,
+    starterCode: `// Implement phantom-typed distance values
+type Distance<U extends 'm' | 'km'> = number & { readonly __unit?: U };
+
+function meters(n: number): Distance<'m'> {
+  // your code here
+}
+
+function kilometers(n: number): Distance<'km'> {
+  // your code here
+}
+
+function addMeters(a: Distance<'m'>, b: Distance<'m'>): Distance<'m'> {
+  // your code here
+}`,
+    solutionCode: `type Distance<U extends 'm' | 'km'> = number & { readonly __unit?: U };
+
+function meters(n: number): Distance<'m'> {
+  return n as Distance<'m'>;
+}
+
+function kilometers(n: number): Distance<'km'> {
+  return n as Distance<'km'>;
+}
+
+function addMeters(a: Distance<'m'>, b: Distance<'m'>): Distance<'m'> {
+  return (a + b) as Distance<'m'>;
+}`,
+    testCases: [
+      { description: 'meters returns the number', input: 'return meters(5)', expected: '5' },
+      { description: 'kilometers returns the number', input: 'return kilometers(10)', expected: '10' },
+      { description: 'addMeters sums correctly', input: 'return addMeters(meters(3), meters(4))', expected: '7' },
+      { description: 'Runtime is just number', input: 'return typeof meters(1)', expected: 'number' },
+    ],
+    xpReward: 95,
+    tags: ['phantom-types', 'branded-types', 'units', 'expert'],
+    tips: [
+      'Phantom types attach a compile-time tag without runtime overhead — the `__unit` field is optional and never assigned.',
+      'Cast plain numbers to the branded type: `return n as Distance<"m">;`',
+      'For `addMeters`: the sum is a plain number, so cast: `return (a + b) as Distance<"m">;`',
+    ],
     published: true,
   },
 
@@ -1388,6 +1914,11 @@ declare global {
     ],
     xpReward: 80,
     tags: ['module-augmentation', 'prototype', 'generics', 'enterprise'],
+    tips: [
+      'Inside `interface Array<T>`, declare: `groupBy<K extends string>(fn: (item: T) => K): Record<K, T[]>;`',
+      'On the prototype, `this` refers to the array — iterate with `for (const item of this as T[])`.',
+      'Build the result: initialize `result[key]` as `[]` if missing, then push each item.',
+    ],
     published: true,
   },
   {
@@ -1424,6 +1955,11 @@ class TypedEmitter<Events extends Record<string, any>> {
     ],
     xpReward: 90,
     tags: ['event-emitter', 'generics', 'classes', 'enterprise'],
+    tips: [
+      'Store listeners as a mapped type: `{ [K in keyof Events]?: Array<(payload: Events[K]) => void> }`.',
+      'In `on`: initialize the array if missing, then push the listener.',
+      'In `emit`: look up the handlers for that event, iterate, and call each with the payload.',
+    ],
     published: true,
   },
   {
@@ -1474,6 +2010,11 @@ class InMemoryRepo<T extends { id: string }> implements Repository<T> {
     ],
     xpReward: 95,
     tags: ['repository-pattern', 'generics', 'interfaces', 'enterprise'],
+    tips: [
+      'The constraint `T extends { id: string }` guarantees every stored item has an id.',
+      'Use a `Map<string, T>` internally: `private store = new Map<string, T>();`',
+      'Methods are thin wrappers: `findById` → `store.get(id)`, `save` → `store.set(item.id, item)`, etc.',
+    ],
     published: true,
   },
   {
@@ -1511,6 +2052,11 @@ function handleResult<T>(
     ],
     xpReward: 85,
     tags: ['discriminated-unions', 'api', 'generics', 'enterprise'],
+    tips: [
+      'The discriminant is `ok: true | false` — TypeScript narrows the type based on this check.',
+      'Define as a union: `{ ok: true; data: T } | { ok: false; error: string }`.',
+      'In the function: `if (result.ok) return onSuccess(result.data); return onError(result.error);`',
+    ],
     published: true,
   },
   {
@@ -1581,6 +2127,11 @@ function object<S extends Record<string, Schema<any>>>(
     ],
     xpReward: 110,
     tags: ['schema-validation', 'generics', 'infer', 'enterprise'],
+    tips: [
+      '`string()` and `number()` return a schema object with a `parse` method that validates via `typeof`.',
+      'For `object()`: iterate the shape\'s keys with `for (const key in shape)`, calling each schema\'s `parse`.',
+      'The mapped type `{ [K in keyof S]: S[K] extends Schema<infer T> ? T : never }` extracts the inner type from each nested schema.',
+    ],
     published: true,
   },
   {
@@ -1616,6 +2167,11 @@ class Config<T extends Record<string, unknown>> {
     ],
     xpReward: 90,
     tags: ['configuration', 'generics', 'classes', 'enterprise'],
+    tips: [
+      'Store config as `private data: T` initialized from the constructor: `this.data = { ...initial };`',
+      'For `get`: use indexed access `this.data[key]`. The return type `T[K]` infers automatically.',
+      'For `set`: assign with the same shape. TypeScript ensures `value` matches the existing type of `key`.',
+    ],
     published: true,
   },
   {
@@ -1648,6 +2204,11 @@ function serialize(val: JsonValue): string {
     ],
     xpReward: 95,
     tags: ['recursive-types', 'json', 'type-aliases', 'enterprise'],
+    tips: [
+      '`JsonValue` is a recursive union — it references `JsonObject` and `JsonArray`, which both reference `JsonValue` back.',
+      'TypeScript allows recursive type aliases as long as the recursion goes through a structural type.',
+      'Full type: `type JsonValue = string | number | boolean | null | JsonArray | JsonObject;`. The serializer is just `JSON.stringify(val)`.',
+    ],
     published: true,
   },
   {
@@ -1695,6 +2256,11 @@ function procedure() {
     ],
     xpReward: 120,
     tags: ['trpc', 'builder-pattern', 'generics', 'inference', 'enterprise'],
+    tips: [
+      'Each step returns a new object with the next allowed methods — classic fluent builder pattern.',
+      '`input<I>` captures the input type from the schema. `handler<O>` captures the output type from the function.',
+      'In the final `call`: `const parsed = schema.parse(raw); return fn(parsed);` — parse first, then invoke.',
+    ],
     published: true,
   },
 ];
@@ -1710,6 +2276,7 @@ const achievements = [
   { name: 'Type Wizard', description: 'Complete the full TypeForge curriculum', icon: '🧙', xpReward: 2000 },
   { name: 'Speed Demon', description: 'Submit 10 challenges in a single day', icon: '⚡', xpReward: 100 },
   { name: 'Perfectionist', description: 'Pass all test cases on first submission', icon: '✨', xpReward: 150 },
+  { name: 'Self-Reliant', description: 'Complete a challenge without revealing any hints', icon: '🦉', xpReward: 75 },
 ];
 
 async function main() {

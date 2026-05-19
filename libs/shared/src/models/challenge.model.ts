@@ -11,6 +11,7 @@ export interface Challenge {
   testCases: TestCase[];
   xpReward: number;
   tags: string[];
+  tips: string[];
   createdAt: string;
 }
 
