@@ -2,12 +2,38 @@
 
 > AI-Powered TypeScript Mastery Platform
 
+[![CI](https://github.com/namoneo/typeforge/actions/workflows/ci.yml/badge.svg)](https://github.com/namoneo/typeforge/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Angular](https://img.shields.io/badge/Angular-19-dd0031?logo=angular&logoColor=white)](https://angular.dev)
 [![NestJS](https://img.shields.io/badge/NestJS-11-e0234e?logo=nestjs&logoColor=white)](https://nestjs.com)
 
-An interactive, full-stack TypeScript learning platform that takes developers from beginner to expert. Think VSCode in the browser + LeetCode-style challenges + an AI mentor + gamification.
+An interactive, full-stack TypeScript learning platform — Monaco editor in the browser, LeetCode-style challenges, an AI mentor powered by Claude, and a gamified XP/levelling system.
+
+---
+
+## Features
+
+| Feature | Status |
+|---------|--------|
+| Interactive TypeScript playground | ✅ Monaco Editor + live diagnostics |
+| Real-time compilation | ✅ Server-side `ts.createProgram` via Socket.IO |
+| Sandboxed code execution | ✅ `isolated-vm` V8 isolates — no host access |
+| JWT auth (register / login / refresh) | ✅ Access + refresh token family tracking |
+| Password reset via email | ✅ Signed token, 1-hour expiry, nodemailer |
+| RBAC (admin / user roles) | ✅ `RolesGuard` + `@Roles()` decorator |
+| Learning tracks (5 levels) | ✅ Beginner → Enterprise |
+| Challenge system (LeetCode-style) | ✅ Submit → compile → run test cases in isolate |
+| XP & levelling system | ✅ XP on challenge completion, live WS push |
+| Admin challenge management | ✅ Full CRUD, draft/publish workflow |
+| Global leaderboard | ✅ |
+| AI Mentor | ✅ Claude Opus 4 via `@anthropic-ai/sdk` — streaming SSE |
+| Rate limiting | ✅ `@nestjs/throttler` (per-endpoint limits) |
+| Health check | ✅ `GET /api/health` — Prisma `SELECT 1` probe |
+| Structured logging | ✅ `nestjs-pino` (JSON in prod, pretty in dev) |
+| Error tracking | ✅ Sentry — 5xx only, DSN injected at runtime |
+| Security headers | ✅ `helmet` with strict CSP |
+| Swagger UI | ✅ `GET /api/docs` |
 
 ---
 
@@ -16,39 +42,28 @@ An interactive, full-stack TypeScript learning platform that takes developers fr
 ```
 TypeForge/
 ├── apps/
-│   ├── web/          # Angular 19 frontend (standalone, signals, TailwindCSS v4)
-│   └── api/          # NestJS 11 backend (JWT auth, WebSockets, REST)
+│   ├── web/          # Angular 19 — standalone components, signals, TailwindCSS v4
+│   └── api/          # NestJS 11 — JWT, WebSockets, REST, isolated-vm sandbox
 ├── libs/
-│   └── shared/       # Shared TypeScript types, DTOs, and constants
+│   └── shared/       # Shared TypeScript types and DTOs
 ├── packages/
-│   └── cli/          # TypeForge scaffolding CLI (standalone tool)
-└── docker-compose.yml
+│   └── cli/          # typeforge scaffolding CLI (standalone)
+├── docker-compose.yml          # dev stack (postgres + redis)
+└── docker-compose.prod.yml     # production stack (with migration service)
 ```
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Angular 19, Standalone components, Signals, TailwindCSS v4, Monaco Editor |
-| Backend | NestJS 11, Prisma 5, PostgreSQL, Redis, BullMQ, Socket.IO |
-| Auth | JWT access tokens + refresh tokens, bcrypt password hashing |
-| Compilation | TypeScript compiler API (`typescript` npm package) — live diagnostics |
-| DevOps | Docker Compose, Nginx reverse proxy |
-
-## Features
-
-| Feature | Status |
-|---------|--------|
-| Interactive TypeScript Playground | ✅ Monaco Editor + TS compiler API |
-| Real-time compilation diagnostics | ✅ Server-side `ts.createProgram` |
-| JWT auth (register / login / refresh) | ✅ |
-| Learning tracks (5 levels) | ✅ Beginner → Enterprise |
-| Challenge system (LeetCode-style) | ✅ Submit → compile → run test cases |
-| XP & levelling system | ✅ XP on challenge completion |
-| WebSocket gateway | ✅ Live compilation via Socket.IO |
-| Global leaderboard | ✅ |
-| Swagger API docs | ✅ `/api/docs` |
-| AI Mentor (explain errors, review code, hints) | ✅ Claude claude-opus-4-7 via `@anthropic-ai/sdk` — streaming SSE |
+| Frontend | Angular 19, standalone components, signals, TailwindCSS v4, Monaco Editor |
+| Backend | NestJS 11, Prisma 6, PostgreSQL, Redis, BullMQ, Socket.IO |
+| Auth | JWT access + refresh tokens, bcrypt, refresh token family tracking |
+| Sandbox | `isolated-vm` — V8 isolates for user code; no `require`, no `process` |
+| AI Mentor | Claude Opus 4 (`@anthropic-ai/sdk`) — streaming SSE |
+| Logging | `nestjs-pino` — structured JSON (prod) / pretty-print (dev) |
+| Monitoring | Sentry (`@sentry/node`, `@sentry/angular`) — 5xx errors only |
+| DevOps | Docker Compose, Nginx, GitHub Actions CI |
 
 ---
 
@@ -66,7 +81,7 @@ TypeForge/
 ```bash
 git clone https://github.com/namoneo/typeforge.git
 cd typeforge
-npm install          # installs root deps (concurrently)
+npm install
 ```
 
 ### 2. Start infrastructure
@@ -79,8 +94,28 @@ docker-compose up postgres redis -d
 
 ```bash
 cp apps/api/.env.example apps/api/.env
-# Edit apps/api/.env — set JWT_SECRET, JWT_REFRESH_SECRET
-# Optional: set ANTHROPIC_API_KEY to enable the AI Mentor (get one at https://console.anthropic.com)
+```
+
+Edit `apps/api/.env` — required fields:
+
+```env
+DATABASE_URL="postgresql://typeforge:typeforge@localhost:5432/typeforge"
+JWT_SECRET="change-me-in-production"
+JWT_REFRESH_SECRET="change-me-too-in-production"
+FRONTEND_URL="http://localhost:4200"
+
+# Optional — AI Mentor (get a key at https://console.anthropic.com)
+ANTHROPIC_API_KEY=
+
+# Optional — password reset emails (omit to log links to console in dev)
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM="TypeForge <noreply@typeforge.dev>"
+
+# Optional — error tracking
+SENTRY_DSN=
 ```
 
 ### 4. Set up the database
@@ -88,49 +123,54 @@ cp apps/api/.env.example apps/api/.env
 ```bash
 cd apps/api
 npm install
-DATABASE_URL="postgresql://typeforge:typeforge@localhost:5432/typeforge" \
-  npx prisma migrate dev --name init
-DATABASE_URL="postgresql://typeforge:typeforge@localhost:5432/typeforge" \
-  npm run prisma:seed
+npx prisma migrate deploy
+npm run prisma:seed
 ```
 
 ### 5. Run both apps
 
 ```bash
-# From repo root — runs API + web dev server concurrently
+# From repo root — starts API + web dev server concurrently
 npm run dev
 
-# Or separately:
-cd apps/api  && npm run dev        # http://localhost:3000  (API)
-cd apps/web  && npm start          # http://localhost:4200  (UI)
+# Or individually:
+cd apps/api && npm run dev     # http://localhost:3000
+cd apps/web && npm start       # http://localhost:4200
 ```
 
-Open **http://localhost:4200** — create an account and start coding.
+Open **http://localhost:4200**, create an account, and start coding.
 
 ---
 
 ## API Reference
 
-Swagger UI is available at **http://localhost:3000/api/docs** when the API is running.
+Swagger UI: **http://localhost:3000/api/docs**
 
-Key endpoints:
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/auth/register` | Create account |
-| `POST` | `/api/auth/login` | Login, get tokens |
-| `POST` | `/api/auth/refresh` | Refresh access token |
-| `GET` | `/api/users/me` | Current user profile |
-| `GET` | `/api/users/me/progress` | Learning progress |
-| `GET` | `/api/users/leaderboard` | Global leaderboard |
-| `GET` | `/api/challenges` | List challenges (filter by track/difficulty) |
-| `GET` | `/api/challenges/:id` | Get single challenge |
-| `POST` | `/api/challenges/submit` | Submit code, run test cases |
-| `POST` | `/api/compiler/compile` | Compile TypeScript, get diagnostics |
-| `POST` | `/api/ai-mentor/ask` | AI Mentor — streams SSE (explain errors / review / hint / concept) |
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/auth/register` | — | Create account |
+| `POST` | `/api/auth/login` | — | Login, receive tokens |
+| `POST` | `/api/auth/refresh` | Cookie | Rotate refresh token |
+| `POST` | `/api/auth/logout` | JWT | Clear tokens |
+| `POST` | `/api/auth/forgot-password` | — | Send password reset email |
+| `POST` | `/api/auth/reset-password` | — | Set new password via token |
+| `GET` | `/api/users/me` | JWT | Current user profile |
+| `GET` | `/api/users/me/progress` | JWT | Learning progress |
+| `GET` | `/api/users/leaderboard` | JWT | Global leaderboard |
+| `GET` | `/api/challenges` | JWT | List challenges (filter by track/difficulty) |
+| `GET` | `/api/challenges/:id` | JWT | Get challenge (no solution code) |
+| `POST` | `/api/challenges/submit` | JWT | Submit code, run test cases in isolate |
+| `POST` | `/api/compiler/compile` | JWT | Compile TypeScript, get diagnostics |
+| `POST` | `/api/ai-mentor/ask` | JWT | AI Mentor — streams SSE |
+| `GET` | `/api/admin/challenges` | JWT + ADMIN | List all challenges including drafts |
+| `GET` | `/api/admin/challenges/:id` | JWT + ADMIN | Get challenge with solution code |
+| `POST` | `/api/challenges` | JWT + ADMIN | Create challenge |
+| `PATCH` | `/api/challenges/:id` | JWT + ADMIN | Update challenge |
+| `DELETE` | `/api/challenges/:id` | JWT + ADMIN | Delete challenge |
+| `GET` | `/api/health` | — | Health check (Prisma probe) |
 
 WebSocket namespace: `/typeforge`  
-Events: `compile` → `compile:result`, `playground:join` → `playground:joined`
+Events: `compile` → `compile:result` · `playground:join` → `playground:joined` · `xp:gained` (push)
 
 ---
 
@@ -146,41 +186,45 @@ Events: `compile` → `compile:result`, `playground:join` → `playground:joined
 
 ---
 
-## Docker (full stack)
+## Production Deployment
 
 ```bash
-docker-compose up --build
+# Copy and fill in all required env vars
+cp apps/api/.env.example .env.prod
+
+# Build and start (runs DB migration automatically before API starts)
+docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 ```
 
-Starts: PostgreSQL, Redis, NestJS API, Angular (served by Nginx)  
-App available at **http://localhost:4200**
+The production compose file:
+- Runs `prisma migrate deploy` as a one-shot service before the API starts
+- Injects `SENTRY_DSN` into the Angular `index.html` at container start via `envsubst`
+- Sets resource limits and `restart: always` on all services
+
+Required production env vars (the API will refuse to start without them):
+
+```
+DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL
+```
 
 ---
 
 ## Development
 
 ```bash
-# Build everything
-npm run build
-
-# Run tests
-npm test
-
-# API only
-cd apps/api && npm run dev
-
-# Frontend only
-cd apps/web && npm start
-
-# Prisma Studio (DB browser)
-cd apps/api && npm run prisma:studio
+npm run build          # build everything
+npm test               # run all tests
+cd apps/api && npm run dev          # API dev server with watch
+cd apps/web && npm start            # Angular dev server
+cd apps/api && npm run prisma:studio   # DB browser at localhost:5555
+cd apps/api && npx prisma migrate dev --name <name>   # create a new migration
 ```
 
 ---
 
 ## Scaffolding CLI
 
-The repo also includes the standalone `typeforge` CLI for bootstrapping new TypeScript projects:
+The standalone `typeforge` CLI bootstraps new TypeScript projects:
 
 ```bash
 cd packages/cli && npm install && npm run build
@@ -191,9 +235,9 @@ node dist/index.js new my-project --template node
 
 ## Contributing
 
-1. Fork the repo and create a feature branch
+1. Fork and create a feature branch
 2. Make changes and add tests
-3. Run `npm run build` and `npm test` from root
+3. Run `npm run build && npm test` from root
 4. Open a pull request
 
 ## License
