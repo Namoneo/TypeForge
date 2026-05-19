@@ -11,6 +11,8 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
+  <!-- __SENTRY_DSN__ is replaced at container start by docker-entrypoint.sh -->
+  <script>window.__SENTRY_DSN__ = '${SENTRY_DSN}';</script>
   <app-root></app-root>
 </body>
 </html>
