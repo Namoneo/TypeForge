@@ -1,29 +1,23 @@
 {
-  "name": "typeforge",
-  "version": "0.1.0",
-  "description": "A modern TypeScript project scaffolding CLI",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "typeforge": "./dist/index.js"
-  },
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "test": "jest",
-    "lint": "eslint src/**/*.ts",
-    "format": "prettier --write \"src/**/*.ts\""
-  },
-  "keywords": [
-    "typescript",
-    "scaffold",
-    "cli",
-    "generator"
+  "name": "typeforge-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TypeForge — AI-Powered TypeScript Mastery Platform (monorepo root)",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "libs/*"
   ],
-  "author": "",
-  "license": "MIT",
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "concurrently \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "test": "npm run test --workspaces --if-present"
+  },
   "devDependencies": {
-    "@types/node": "^25.9.0",
-    "typescript": "^5.0.0"
-  }
+    "concurrently": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
 }

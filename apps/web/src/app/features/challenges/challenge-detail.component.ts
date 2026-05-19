@@ -1,0 +1,156 @@
+import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MonacoEditorComponent } from '../../shared/components/monaco-editor/monaco-editor.component';
+import { ChallengeService, Challenge, SubmitResult } from '../../core/services/challenge.service';
+import { AppStore } from '../../core/store/app.store';
+import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
+
+@Component({
+  selector: 'tf-challenge-detail',
+  standalone: true,
+  imports: [CommonModule, MonacoEditorComponent],
+  template: `
+    <div class="flex h-screen" style="background: var(--bg-base)">
+      @if (challenge(); as c) {
+        <!-- Left: description -->
+        <div class="w-96 shrink-0 flex flex-col border-r overflow-auto"
+             style="background: var(--bg-surface); border-color: var(--border)">
+          <!-- Header -->
+          <div class="p-4 border-b" style="border-color: var(--border)">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs px-2 py-0.5 rounded-full font-mono"
+                    [style.background]="difficultyColor(c.difficulty) + '20'"
+                    [style.color]="difficultyColor(c.difficulty)">
+                {{ c.difficulty }}
+              </span>
+              <span class="text-xs" style="color: var(--text-muted)">{{ c.track }}</span>
+              <span class="ml-auto text-xs font-semibold" style="color: var(--accent)">+{{ c.xpReward }} XP</span>
+            </div>
+            <h1 class="font-bold text-lg" style="color: var(--text-primary)">{{ c.title }}</h1>
+          </div>
+
+          <!-- Description -->
+          <div class="p-4 flex-1">
+            <p class="text-sm leading-relaxed mb-4" style="color: var(--text-secondary)">{{ c.description }}</p>
+
+            <!-- Test cases -->
+            <h3 class="text-xs font-semibold mb-2 uppercase tracking-wide" style="color: var(--text-muted)">Test cases</h3>
+            <div class="space-y-2">
+              @for (tc of c.testCases; track $index) {
+                <div class="rounded-lg p-3 text-xs" style="background: var(--bg-elevated)">
+                  <div class="font-medium mb-1" style="color: var(--text-primary)">{{ tc.description }}</div>
+                  @if (tc.input) {
+                    <div class="font-mono" style="color: var(--text-secondary)">Input: {{ tc.input }}</div>
+                  }
+                  <div class="font-mono" style="color: var(--text-muted)">Expected: {{ tc.expected }}</div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: editor + results -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+          <!-- Toolbar -->
+          <div class="flex items-center gap-2 px-4 py-2 border-b shrink-0"
+               style="background: var(--bg-surface); border-color: var(--border)">
+            <span class="text-sm font-medium truncate" style="color: var(--text-secondary)">{{ c.title }}</span>
+            <div class="flex-1"></div>
+            <button (click)="submit()" [disabled]="submitting()"
+                    class="px-4 py-1.5 rounded-md text-xs font-medium transition-opacity"
+                    style="background: var(--accent); color: white"
+                    [style.opacity]="submitting() ? '0.6' : '1'">
+              {{ submitting() ? 'Running tests…' : '⚡ Submit' }}
+            </button>
+          </div>
+
+          <!-- Monaco -->
+          <div class="flex-1 overflow-hidden">
+            <tf-monaco-editor #editor [value]="code()" language="typescript"
+              (valueChange)="code.set($event)">
+            </tf-monaco-editor>
+          </div>
+
+          <!-- Results panel -->
+          @if (result(); as r) {
+            <div class="border-t p-4 shrink-0 max-h-56 overflow-auto"
+                 style="background: var(--bg-surface); border-color: var(--border)">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-2 h-2 rounded-full"
+                      [style.background]="r.passed ? 'var(--success)' : 'var(--danger)'"></span>
+                <span class="text-sm font-semibold"
+                      [style.color]="r.passed ? 'var(--success)' : 'var(--danger)'">
+                  {{ r.passed ? '✓ All tests passed!' : '✖ Tests failed' }}
+                </span>
+                @if (r.xpEarned > 0) {
+                  <span class="text-xs px-2 py-0.5 rounded-full"
+                        style="background: var(--accent); color: white">
+                    +{{ r.xpEarned }} XP
+                  </span>
+                }
+              </div>
+              <div class="space-y-1.5">
+                @for (tr of r.testResults; track $index) {
+                  <div class="flex items-start gap-2 text-xs">
+                    <span [style.color]="tr.passed ? 'var(--success)' : 'var(--danger)'">
+                      {{ tr.passed ? '✓' : '✖' }}
+                    </span>
+                    <span style="color: var(--text-secondary)">{{ tr.description }}</span>
+                    @if (!tr.passed && tr.error) {
+                      <span style="color: var(--danger)" class="ml-auto">{{ tr.error }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (loading()) {
+        <div class="flex items-center justify-center w-full" style="color: var(--text-muted)">Loading challenge…</div>
+      }
+    </div>
+  `,
+})
+export class ChallengeDetailComponent implements OnInit {
+  @ViewChild('editor') editorRef!: MonacoEditorComponent;
+  private svc = inject(ChallengeService);
+  private route = inject(ActivatedRoute);
+  private store = inject(AppStore);
+
+  challenge = signal<Challenge | null>(null);
+  loading = signal(true);
+  submitting = signal(false);
+  result = signal<SubmitResult | null>(null);
+  code = signal('');
+
+  difficultyColor(d: string) { return DIFFICULTY_COLORS[d] ?? '#888'; }
+
+  ngOnInit() {
+    const id = this.route.snapshot.paramMap.get('id')!;
+    this.svc.getOne(id).subscribe({
+      next: (c) => {
+        this.challenge.set(c);
+        this.code.set(c.starterCode);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
+  }
+
+  submit() {
+    const c = this.challenge();
+    if (!c) return;
+    this.submitting.set(true);
+    this.svc.submit(c.id, this.code()).subscribe({
+      next: (r) => {
+        this.result.set(r);
+        this.submitting.set(false);
+        if (r.xpEarned > 0) {
+          this.store.updateUser({ xp: (this.store.xp() + r.xpEarned) });
+        }
+      },
+      error: () => this.submitting.set(false),
+    });
+  }
+}

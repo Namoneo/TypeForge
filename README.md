@@ -1,156 +1,199 @@
 # TypeForge
 
-> A modern TypeScript project scaffolding CLI — early development, v0.1.0
+> AI-Powered TypeScript Mastery Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Angular](https://img.shields.io/badge/Angular-19-dd0031?logo=angular&logoColor=white)](https://angular.dev)
+[![NestJS](https://img.shields.io/badge/NestJS-11-e0234e?logo=nestjs&logoColor=white)](https://nestjs.com)
 
-TypeForge is a TypeScript project scaffolding tool. It provides a structured starting point for new TypeScript projects with sensible defaults and a clean build setup.
+An interactive, full-stack TypeScript learning platform that takes developers from beginner to expert. Think VSCode in the browser + LeetCode-style challenges + an AI mentor + gamification.
 
 ---
 
-## Table of Contents
+## Architecture
 
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-- [Development](#development)
-- [Scripts](#scripts)
-- [Project Structure](#project-structure)
-- [Vision & Roadmap](#vision--roadmap)
-- [Contributing](#contributing)
-- [License](#license)
+```
+TypeForge/
+├── apps/
+│   ├── web/          # Angular 19 frontend (standalone, signals, TailwindCSS v4)
+│   └── api/          # NestJS 11 backend (JWT auth, WebSockets, REST)
+├── libs/
+│   └── shared/       # Shared TypeScript types, DTOs, and constants
+├── packages/
+│   └── cli/          # TypeForge scaffolding CLI (standalone tool)
+└── docker-compose.yml
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Angular 19, Standalone components, Signals, TailwindCSS v4, Monaco Editor |
+| Backend | NestJS 11, Prisma 5, PostgreSQL, Redis, BullMQ, Socket.IO |
+| Auth | JWT access tokens + refresh tokens, bcrypt password hashing |
+| Compilation | TypeScript compiler API (`typescript` npm package) — live diagnostics |
+| DevOps | Docker Compose, Nginx reverse proxy |
+
+## Features
+
+| Feature | Status |
+|---------|--------|
+| Interactive TypeScript Playground | ✅ Monaco Editor + TS compiler API |
+| Real-time compilation diagnostics | ✅ Server-side `ts.createProgram` |
+| JWT auth (register / login / refresh) | ✅ |
+| Learning tracks (5 levels) | ✅ Beginner → Enterprise |
+| Challenge system (LeetCode-style) | ✅ Submit → compile → run test cases |
+| XP & levelling system | ✅ XP on challenge completion |
+| WebSocket gateway | ✅ Live compilation via Socket.IO |
+| Global leaderboard | ✅ |
+| Swagger API docs | ✅ `/api/docs` |
+| AI Mentor | 🔜 Requires LLM API key |
 
 ---
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) 18 or later
-- [npm](https://www.npmjs.com/) 9 or later
+- [Node.js](https://nodejs.org/) 18+
+- [Docker](https://docker.com/) (for PostgreSQL + Redis)
 
-## Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/namoneo/typeforge.git
-cd typeforge
-
-# Install dependencies
-npm install
-```
+---
 
 ## Quick Start
 
+### 1. Clone & install
+
 ```bash
-# Build the project
-npm run build
-
-# Run the CLI
-node dist/index.js
-# → Hello from TypeForge, World!
+git clone https://github.com/namoneo/typeforge.git
+cd typeforge
+npm install          # installs root deps (concurrently)
 ```
 
-## Usage
+### 2. Start infrastructure
 
-Import TypeForge utilities in your TypeScript project:
-
-```typescript
-import { greet } from 'typeforge';
-
-console.log(greet('Alice'));
-// → Hello from TypeForge, Alice!
+```bash
+docker-compose up postgres redis -d
 ```
+
+### 3. Configure environment
+
+```bash
+cp apps/api/.env.example apps/api/.env
+# Edit apps/api/.env — set JWT_SECRET and JWT_REFRESH_SECRET
+```
+
+### 4. Set up the database
+
+```bash
+cd apps/api
+npm install
+DATABASE_URL="postgresql://typeforge:typeforge@localhost:5432/typeforge" \
+  npx prisma migrate dev --name init
+DATABASE_URL="postgresql://typeforge:typeforge@localhost:5432/typeforge" \
+  npm run prisma:seed
+```
+
+### 5. Run both apps
+
+```bash
+# From repo root — runs API + web dev server concurrently
+npm run dev
+
+# Or separately:
+cd apps/api  && npm run dev        # http://localhost:3000  (API)
+cd apps/web  && npm start          # http://localhost:4200  (UI)
+```
+
+Open **http://localhost:4200** — create an account and start coding.
+
+---
+
+## API Reference
+
+Swagger UI is available at **http://localhost:3000/api/docs** when the API is running.
+
+Key endpoints:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/auth/register` | Create account |
+| `POST` | `/api/auth/login` | Login, get tokens |
+| `POST` | `/api/auth/refresh` | Refresh access token |
+| `GET` | `/api/users/me` | Current user profile |
+| `GET` | `/api/users/me/progress` | Learning progress |
+| `GET` | `/api/users/leaderboard` | Global leaderboard |
+| `GET` | `/api/challenges` | List challenges (filter by track/difficulty) |
+| `GET` | `/api/challenges/:id` | Get single challenge |
+| `POST` | `/api/challenges/submit` | Submit code, run test cases |
+| `POST` | `/api/compiler/compile` | Compile TypeScript, get diagnostics |
+
+WebSocket namespace: `/typeforge`  
+Events: `compile` → `compile:result`, `playground:join` → `playground:joined`
+
+---
+
+## Learning Tracks
+
+| Track | Topics | Difficulty |
+|-------|--------|-----------|
+| 🌱 Beginner | Variables, functions, interfaces, unions, enums | Easy |
+| ⚡ Intermediate | Generics, overloads, utility types, mapped types | Medium |
+| 🔥 Advanced | Conditional types, template literals, recursion, variance | Hard |
+| 💎 Expert | Type-level programming, compiler internals, DSL creation | Expert |
+| 🏢 Enterprise | Angular, NestJS, Prisma, Zod, tRPC, monorepos | Advanced |
+
+---
+
+## Docker (full stack)
+
+```bash
+docker-compose up --build
+```
+
+Starts: PostgreSQL, Redis, NestJS API, Angular (served by Nginx)  
+App available at **http://localhost:4200**
+
+---
 
 ## Development
 
 ```bash
-# Watch mode — recompiles on file changes
-npm run dev
+# Build everything
+npm run build
 
 # Run tests
 npm test
 
-# Lint source files
-npm run lint
+# API only
+cd apps/api && npm run dev
 
-# Auto-format source files
-npm run format
+# Frontend only
+cd apps/web && npm start
+
+# Prisma Studio (DB browser)
+cd apps/api && npm run prisma:studio
 ```
-
-## Scripts
-
-| Script | Description |
-|--------|-------------|
-| `build` | Compile TypeScript to `dist/` |
-| `dev` | Watch mode compilation |
-| `test` | Run Jest test suite |
-| `lint` | ESLint on `src/**/*.ts` |
-| `format` | Prettier on `src/**/*.ts` |
-
-## Project Structure
-
-```
-TypeForge/
-├── src/
-│   └── index.ts        # Main entry point
-├── dist/               # Compiled output (git-ignored)
-├── tsconfig.json       # TypeScript compiler config
-├── package.json
-└── README.md
-```
-
-**TypeScript config highlights:**
-- Target: `ES2022`
-- Module: `NodeNext`
-- Strict mode enabled
-- Source maps and declaration files emitted
 
 ---
 
-## Vision & Roadmap
+## Scaffolding CLI
 
-The long-term vision for TypeForge is to become an **AI-powered TypeScript mastery platform** — an interactive environment that guides developers from beginner to expert-level TypeScript. Think of it as:
+The repo also includes the standalone `typeforge` CLI for bootstrapping new TypeScript projects:
 
-- **VSCode in the browser** — a familiar, powerful editing experience via Monaco Editor
-- **Interactive playground** — live TypeScript execution, AST analysis, and hover types
-- **AI mentor** — senior-level guidance, error analysis, and code review
-- **Visual compiler explorer** — see how types transform and resolve
-- **Gamified learning platform** — XP, streaks, levels, achievements, and structured progression
-
-### Planned Learning Tracks
-
-| Track | Topics |
-|-------|--------|
-| Beginner | Variables, functions, interfaces, unions, enums |
-| Intermediate | Generics, overloads, utility types, mapped types |
-| Advanced | Conditional types, template literals, recursion, variance |
-| Expert | Type-level programming, compiler internals, DSL creation |
-| Enterprise | Angular, NestJS, Prisma, Zod, monorepos, API contracts |
-
-### Planned Tech Stack
-
-**Frontend:** Angular (standalone), Signals, TailwindCSS v4, Monaco Editor, Shiki  
-**Backend:** NestJS, PostgreSQL, Prisma, Redis, BullMQ, WebSocket, JWT auth  
-**Infra:** Nx or Turborepo monorepo
-
-> This section describes future plans. Current code reflects the scaffolding foundation only.
+```bash
+cd packages/cli && npm install && npm run build
+node dist/index.js new my-project --template node
+```
 
 ---
 
 ## Contributing
 
-Contributions are welcome! To get started:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/my-feature`
-3. Make your changes and add tests where appropriate
-4. Run `npm run lint && npm test` to verify
-5. Open a pull request with a clear description
-
-Please keep pull requests focused — one feature or fix per PR.
+1. Fork the repo and create a feature branch
+2. Make changes and add tests
+3. Run `npm run build` and `npm test` from root
+4. Open a pull request
 
 ## License
 
-[MIT](LICENSE)
+MIT
