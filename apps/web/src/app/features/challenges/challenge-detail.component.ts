@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -81,6 +81,55 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
                     </div>
                   }
                 </div>
+
+                <!-- Tips section -->
+                @if (c.tips && c.tips.length > 0) {
+                  <div class="mt-4 pt-4 border-t" style="border-color: var(--border)">
+                    <div class="flex items-center justify-between mb-2">
+                      <h3 class="text-xs font-semibold uppercase tracking-wide" style="color: var(--text-muted)">
+                        💡 Hints
+                      </h3>
+                      @if (revealedTipCount() < c.tips.length) {
+                        <button (click)="revealNextTip()"
+                                class="text-xs px-2 py-1 rounded border transition-colors"
+                                style="border-color: var(--accent); color: var(--accent)">
+                          {{ revealedTipCount() === 0 ? 'Show hint' : 'Next hint' }}
+                          ({{ revealedTipCount() }}/{{ c.tips.length }})
+                        </button>
+                      } @else {
+                        <span class="text-xs" style="color: var(--text-muted)">All hints shown</span>
+                      }
+                    </div>
+
+                    @if (revealedTipCount() > 0) {
+                      <div class="space-y-2">
+                        @for (tip of revealedTips(); track $index) {
+                          <div class="rounded-lg p-3 text-xs border-l-2"
+                               style="background: var(--bg-elevated); border-left-color: var(--accent)">
+                            <span class="font-semibold mr-1" style="color: var(--accent)">
+                              Hint {{ $index + 1 }}:
+                            </span>
+                            <span style="color: var(--text-secondary)">{{ tip }}</span>
+                          </div>
+                        }
+                      </div>
+
+                      @if (revealedTipCount() === c.tips.length) {
+                        <p class="text-xs mt-3" style="color: var(--text-muted)">
+                          Still stuck? Try the
+                          <button (click)="leftTab.set('mentor')"
+                                  class="underline"
+                                  style="color: var(--accent)">AI Mentor</button>
+                          for personalized guidance.
+                        </p>
+                      }
+                    } @else {
+                      <p class="text-xs" style="color: var(--text-muted)">
+                        Hints are available if you get stuck.
+                      </p>
+                    }
+                  </div>
+                }
               </div>
             </div>
           } @else {
@@ -127,7 +176,7 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
           }
 
           @if (result(); as r) {
-            <div class="border-t p-4 shrink-0 max-h-56 overflow-auto"
+            <div class="border-t p-4 shrink-0 max-h-72 overflow-auto"
                  style="background: var(--bg-surface); border-color: var(--border)">
               <div class="flex items-center gap-2 mb-3">
                 <span class="w-2 h-2 rounded-full"
@@ -145,7 +194,7 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
                 @if (!r.passed) {
                   <button (click)="leftTab.set('mentor')" class="ml-auto text-xs px-2 py-0.5 rounded border"
                           style="border-color: var(--accent); color: var(--accent)">
-                    ✦ Get help
+                    ✦ Ask AI
                   </button>
                 }
               </div>
@@ -164,6 +213,32 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
                   </div>
                 }
               </div>
+
+              <!-- Inline hint prompt after failure -->
+              @if (!r.passed && c.tips && c.tips.length > 0) {
+                <div class="mt-3 pt-3 border-t" style="border-color: var(--border)">
+                  @if (revealedTipCount() === 0) {
+                    <button (click)="showFirstTip()"
+                            class="text-xs flex items-center gap-1.5"
+                            style="color: var(--accent)">
+                      💡 Show a hint to get unstuck
+                    </button>
+                  } @else {
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs" style="color: var(--text-muted)">
+                        💡 {{ revealedTipCount() }} of {{ c.tips.length }} hints shown in the Description tab
+                      </span>
+                      @if (revealedTipCount() < c.tips.length) {
+                        <button (click)="revealNextTip()"
+                                class="text-xs px-2 py-0.5 rounded border"
+                                style="border-color: var(--accent); color: var(--accent)">
+                          Next hint
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
             </div>
           }
         </div>
@@ -191,8 +266,30 @@ export class ChallengeDetailComponent implements OnInit {
   leftTab = signal<'description' | 'mentor'>('description');
   submitErrors = signal<Diagnostic[]>([]);
   toastMessage = signal<string | null>(null);
+  revealedTipCount = signal(0);
+
+  revealedTips = computed(() => {
+    const c = this.challenge();
+    if (!c?.tips) return [];
+    return c.tips.slice(0, this.revealedTipCount());
+  });
 
   difficultyColor(d: string) { return DIFFICULTY_COLORS[d] ?? '#888'; }
+
+  revealNextTip() {
+    const c = this.challenge();
+    if (!c?.tips) return;
+    if (this.revealedTipCount() < c.tips.length) {
+      this.revealedTipCount.update(n => n + 1);
+    }
+  }
+
+  showFirstTip() {
+    this.leftTab.set('description');
+    if (this.revealedTipCount() === 0) {
+      this.revealedTipCount.set(1);
+    }
+  }
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id')!;
@@ -221,6 +318,10 @@ export class ChallengeDetailComponent implements OnInit {
         if (r.xpEarned > 0) {
           this.store.updateUser({ xp: this.store.xp() + r.xpEarned });
           this.showToast(`+${r.xpEarned} XP earned!`);
+        }
+        if (!r.passed && c.tips?.length && this.revealedTipCount() === 0) {
+          this.revealedTipCount.set(1);
+          this.leftTab.set('description');
         }
       },
       error: (err: HttpErrorResponse) => {

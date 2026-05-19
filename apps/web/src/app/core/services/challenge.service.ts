@@ -12,6 +12,7 @@ export interface Challenge {
   testCases: Array<{ description: string; input?: string; expected: string }>;
   xpReward: number;
   tags: string[];
+  tips?: string[];
   order?: number;
   published?: boolean;
 }
@@ -34,6 +35,7 @@ export interface CreateChallengePayload {
   testCases: Array<{ description: string; input?: string; expected: string }>;
   xpReward: number;
   tags: string[];
+  tips?: string[];
   published: boolean;
 }
 
