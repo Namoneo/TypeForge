@@ -1,4 +1,4 @@
-import { Component, inject, input, computed } from '@angular/core';
+import { Component, inject, input, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MentorService } from '../../../core/services/mentor.service';
 import type { Diagnostic } from '../../../core/services/compiler.service';
@@ -83,8 +83,17 @@ export class AiMentorPanelComponent {
   errors = input<Diagnostic[]>([]);
   context = input<string>('');
   mode = input<'playground' | 'challenge'>('playground');
+  hintTrigger = input(0);
 
   hasErrors = computed(() => (this.errors() ?? []).length > 0);
+
+  constructor() {
+    effect(() => {
+      if (this.hintTrigger() > 0 && !this.mentor.isStreaming()) {
+        this.getHint();
+      }
+    });
+  }
 
   explainErrors() {
     this.mentor.ask({
