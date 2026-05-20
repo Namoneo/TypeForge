@@ -114,15 +114,6 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
                         }
                       </div>
 
-                      @if (revealedTipCount() === c.tips.length) {
-                        <p class="text-xs mt-3" style="color: var(--text-muted)">
-                          Still stuck? Try the
-                          <button (click)="leftTab.set('mentor')"
-                                  class="underline"
-                                  style="color: var(--accent)">AI Mentor</button>
-                          for personalized guidance.
-                        </p>
-                      }
                     } @else {
                       <p class="text-xs" style="color: var(--text-muted)">
                         Hints are available if you get stuck.
@@ -137,6 +128,7 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
               [code]="code()"
               [errors]="submitErrors()"
               [context]="c.title + ': ' + c.description"
+              [hintTrigger]="aiHintTrigger()"
               mode="challenge"
               class="flex flex-col flex-1 overflow-hidden">
             </tf-ai-mentor-panel>
@@ -214,31 +206,6 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
                 }
               </div>
 
-              <!-- Inline hint prompt after failure -->
-              @if (!r.passed && c.tips && c.tips.length > 0) {
-                <div class="mt-3 pt-3 border-t" style="border-color: var(--border)">
-                  @if (revealedTipCount() === 0) {
-                    <button (click)="showFirstTip()"
-                            class="text-xs flex items-center gap-1.5"
-                            style="color: var(--accent)">
-                      💡 Show a hint to get unstuck
-                    </button>
-                  } @else {
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs" style="color: var(--text-muted)">
-                        💡 {{ revealedTipCount() }} of {{ c.tips.length }} hints shown in the Description tab
-                      </span>
-                      @if (revealedTipCount() < c.tips.length) {
-                        <button (click)="revealNextTip()"
-                                class="text-xs px-2 py-0.5 rounded border"
-                                style="border-color: var(--accent); color: var(--accent)">
-                          Next hint
-                        </button>
-                      }
-                    </div>
-                  }
-                </div>
-              }
             </div>
           }
         </div>
@@ -267,6 +234,7 @@ export class ChallengeDetailComponent implements OnInit {
   submitErrors = signal<Diagnostic[]>([]);
   toastMessage = signal<string | null>(null);
   revealedTipCount = signal(0);
+  aiHintTrigger = signal(0);
 
   revealedTips = computed(() => {
     const c = this.challenge();
@@ -319,9 +287,9 @@ export class ChallengeDetailComponent implements OnInit {
           this.store.updateUser({ xp: this.store.xp() + r.xpEarned });
           this.showToast(`+${r.xpEarned} XP earned!`);
         }
-        if (!r.passed && c.tips?.length && this.revealedTipCount() === 0) {
-          this.revealedTipCount.set(1);
-          this.leftTab.set('description');
+        if (!r.passed) {
+          this.leftTab.set('mentor');
+          this.aiHintTrigger.update(n => n + 1);
         }
       },
       error: (err: HttpErrorResponse) => {
