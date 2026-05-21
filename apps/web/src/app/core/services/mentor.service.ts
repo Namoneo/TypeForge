@@ -18,7 +18,12 @@ export class MentorService {
   readonly isStreaming = signal(false);
   readonly response = signal('');
 
+  private activeAskId = 0;
+
   async ask(params: AskMentorParams): Promise<void> {
+    if (this.isStreaming()) return;
+
+    const askId = ++this.activeAskId;
     this.isStreaming.set(true);
     this.response.set('');
 
@@ -33,6 +38,8 @@ export class MentorService {
         body: JSON.stringify(params),
       });
 
+      if (askId !== this.activeAskId) return;
+
       if (!res.ok || !res.body) {
         this.response.set('Failed to reach AI Mentor. Please try again.');
         return;
@@ -45,6 +52,7 @@ export class MentorService {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        if (askId !== this.activeAskId) return;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -63,9 +71,13 @@ export class MentorService {
         }
       }
     } catch {
-      this.response.set('Error connecting to AI Mentor. Please try again.');
+      if (askId === this.activeAskId) {
+        this.response.set('Error connecting to AI Mentor. Please try again.');
+      }
     } finally {
-      this.isStreaming.set(false);
+      if (askId === this.activeAskId) {
+        this.isStreaming.set(false);
+      }
     }
   }
 

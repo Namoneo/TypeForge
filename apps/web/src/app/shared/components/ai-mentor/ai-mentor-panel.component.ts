@@ -87,11 +87,14 @@ export class AiMentorPanelComponent {
 
   hasErrors = computed(() => (this.errors() ?? []).length > 0);
 
+  private lastHandledHintTrigger = 0;
+
   constructor() {
     effect(() => {
-      if (this.hintTrigger() > 0 && !this.mentor.isStreaming()) {
-        this.getHint();
-      }
+      const trigger = this.hintTrigger();
+      if (trigger <= this.lastHandledHintTrigger) return;
+      this.lastHandledHintTrigger = trigger;
+      this.getHint();
     });
   }
 

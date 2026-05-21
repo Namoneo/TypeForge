@@ -27,7 +27,7 @@ An interactive, full-stack TypeScript learning platform — Monaco editor in the
 | XP & levelling system | ✅ XP on challenge completion, live WS push |
 | Admin challenge management | ✅ Full CRUD, draft/publish workflow |
 | Global leaderboard | ✅ |
-| AI Mentor | ✅ Claude Opus 4 via `@anthropic-ai/sdk` — streaming SSE |
+| AI Mentor | ✅ Claude Opus 4 — Anthropic API or Claude CLI (local dev) |
 | Rate limiting | ✅ `@nestjs/throttler` (per-endpoint limits) |
 | Health check | ✅ `GET /api/health` — Prisma `SELECT 1` probe |
 | Structured logging | ✅ `nestjs-pino` (JSON in prod, pretty in dev) |
@@ -60,7 +60,7 @@ TypeForge/
 | Backend | NestJS 11, Prisma 6, PostgreSQL, Redis, BullMQ, Socket.IO |
 | Auth | JWT access + refresh tokens, bcrypt, refresh token family tracking |
 | Sandbox | `isolated-vm` — V8 isolates for user code; no `require`, no `process` |
-| AI Mentor | Claude Opus 4 (`@anthropic-ai/sdk`) — streaming SSE |
+| AI Mentor | Claude Opus 4 — `@anthropic-ai/sdk` or Claude CLI (dev) — streaming SSE |
 | Logging | `nestjs-pino` — structured JSON (prod) / pretty-print (dev) |
 | Monitoring | Sentry (`@sentry/node`, `@sentry/angular`) — 5xx errors only |
 | DevOps | Docker Compose, Nginx, GitHub Actions CI |
@@ -76,7 +76,44 @@ TypeForge/
 
 ## Quick Start
 
-### 1. Clone & install
+### Option A — one command (recommended)
+
+```bash
+git clone https://github.com/namoneo/typeforge.git
+cd typeforge
+chmod +x run.sh
+./run.sh
+```
+
+`run.sh` starts Docker (Postgres + Redis), applies migrations, seeds the database if empty, and runs the API + web dev servers.
+
+| Service | URL |
+|---------|-----|
+| Web | http://localhost:4200 |
+| API | http://localhost:3000 |
+| Swagger | http://localhost:3000/api/docs |
+
+**Seeded admin login** (after `./run.sh seed` or first `./run.sh`):
+
+| Email | Password |
+|-------|------------|
+| `admin@typeforge.dev` | `Admin1234!` |
+
+Re-seed anytime (wipes and reloads challenges):
+
+```bash
+./run.sh seed
+```
+
+Stop Docker services:
+
+```bash
+./run.sh down
+```
+
+### Option B — manual setup
+
+#### 1. Clone & install
 
 ```bash
 git clone https://github.com/namoneo/typeforge.git
@@ -84,13 +121,13 @@ cd typeforge
 npm install
 ```
 
-### 2. Start infrastructure
+#### 2. Start infrastructure
 
 ```bash
-docker-compose up postgres redis -d
+docker compose up postgres redis -d
 ```
 
-### 3. Configure environment
+#### 3. Configure environment
 
 ```bash
 cp apps/api/.env.example apps/api/.env
@@ -103,9 +140,11 @@ DATABASE_URL="postgresql://typeforge:typeforge@localhost:5432/typeforge"
 JWT_SECRET="change-me-in-production"
 JWT_REFRESH_SECRET="change-me-too-in-production"
 FRONTEND_URL="http://localhost:4200"
+PORT=3000
 
-# Optional — AI Mentor (get a key at https://console.anthropic.com)
+# AI Mentor — pick one (see "AI Mentor" section below)
 ANTHROPIC_API_KEY=
+# AI_MENTOR_PROVIDER=cli
 
 # Optional — password reset emails (omit to log links to console in dev)
 SMTP_HOST=
@@ -118,16 +157,15 @@ SMTP_FROM="TypeForge <noreply@typeforge.dev>"
 SENTRY_DSN=
 ```
 
-### 4. Set up the database
+#### 4. Set up the database
 
 ```bash
 cd apps/api
-npm install
 npx prisma migrate deploy
 npm run prisma:seed
 ```
 
-### 5. Run both apps
+#### 5. Run both apps
 
 ```bash
 # From repo root — starts API + web dev server concurrently
@@ -138,7 +176,72 @@ cd apps/api && npm run dev     # http://localhost:3000
 cd apps/web && npm start       # http://localhost:4200
 ```
 
-Open **http://localhost:4200**, create an account, and start coding.
+Open **http://localhost:4200**, log in with the seeded admin account (or register), and start coding.
+
+---
+
+## AI Mentor
+
+The mentor streams answers over SSE at `POST /api/ai-mentor/ask` (JWT required).
+
+### Production / default: Anthropic API
+
+Set an API key from [console.anthropic.com](https://console.anthropic.com):
+
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Local dev only: Claude CLI
+
+Use your global [Claude Code CLI](https://code.claude.com) login instead of an API key:
+
+```bash
+brew install anthropics/tap/claude   # if needed
+claude auth login
+```
+
+```env
+AI_MENTOR_PROVIDER=cli
+# Leave ANTHROPIC_API_KEY empty to use subscription billing via CLI
+# CLAUDE_CLI_PATH=claude
+# CLAUDE_CLI_MODEL=
+```
+
+`AI_MENTOR_PROVIDER=cli` is **ignored in production** — deploys always use the Anthropic API.
+
+---
+
+## Troubleshooting
+
+### No challenges after seed
+
+Challenges require a running API **and** a logged-in user. Verify:
+
+```bash
+curl http://localhost:3000/api/health   # should return JSON, not HTML
+```
+
+If port 3000 serves another app, either stop it or run TypeForge on another port:
+
+```env
+# apps/api/.env
+PORT=3001
+```
+
+Update `apps/web/proxy.conf.json` to match, then restart `npm run dev`.
+
+### `P1010` / database auth errors on migrate or seed
+
+A local Postgres (often Homebrew) may be bound to `localhost:5432` and shadow the Docker container. Stop it (`brew services stop postgresql@16`) and use `postgresql://typeforge:typeforge@localhost:5432/typeforge`.
+
+### `EADDRINUSE` on port 3000
+
+Another process is using the API port. Find it with `lsof -nP -iTCP:3000 -sTCP:LISTEN`, stop it, or set `PORT=3001` as above.
+
+### AI Mentor loops or repeats
+
+Restart the dev servers after pulling latest — a fixed Angular `effect()` was re-triggering hint requests when streaming finished.
 
 ---
 
@@ -212,11 +315,14 @@ DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL
 ## Development
 
 ```bash
-npm run build          # build everything
-npm test               # run all tests
-cd apps/api && npm run dev          # API dev server with watch
-cd apps/web && npm start            # Angular dev server
-cd apps/api && npm run prisma:studio   # DB browser at localhost:5555
+./run.sh                              # docker + migrate + seed + dev servers
+./run.sh seed                         # re-run seed (wipes challenges)
+./run.sh down                         # stop docker services
+npm run build                         # build everything
+npm test                              # run all tests
+cd apps/api && npm run dev            # API dev server with watch
+cd apps/web && npm start              # Angular dev server
+cd apps/api && npm run prisma:studio  # DB browser at localhost:5555
 cd apps/api && npx prisma migrate dev --name <name>   # create a new migration
 ```
 
