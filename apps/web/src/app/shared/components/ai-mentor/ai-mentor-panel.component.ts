@@ -13,7 +13,7 @@ import type { Diagnostic } from '../../../core/services/compiler.service';
       <div class="flex items-center gap-2 px-3 py-2 border-b shrink-0"
            style="border-color: var(--border)">
         <span class="text-xs font-semibold" style="color: var(--accent)">✦ AI Mentor</span>
-        <span class="text-xs" style="color: var(--text-muted)">claude-opus-4-7</span>
+        <span class="text-xs" style="color: var(--text-muted)">{{ modelLabel() }}</span>
         @if (mentor.isStreaming()) {
           <span class="ml-auto flex gap-0.5">
             <span class="w-1.5 h-1.5 rounded-full animate-bounce" style="background: var(--accent); animation-delay: 0ms"></span>
@@ -84,6 +84,7 @@ export class AiMentorPanelComponent {
   context = input<string>('');
   mode = input<'playground' | 'challenge'>('playground');
   hintTrigger = input(0);
+  modelLabel = input<string>('gemini-2.0-flash');
 
   hasErrors = computed(() => (this.errors() ?? []).length > 0);
 
