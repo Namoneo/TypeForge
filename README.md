@@ -307,8 +307,57 @@ The production compose file:
 Required production env vars (the API will refuse to start without them):
 
 ```
-DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL
+DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL, ANTHROPIC_API_KEY
 ```
+
+---
+
+## Where to Host
+
+TypeForge is a **full-stack** app (Angular + NestJS + PostgreSQL + Redis + WebSockets + `isolated-vm`). There is no single free tier that runs everything with one click, but these options work well:
+
+### Best for production / demos — Docker VM
+
+Use the included `docker-compose.prod.yml` on a small VPS:
+
+| Provider | Notes |
+|----------|--------|
+| [Oracle Cloud Always Free](https://www.oracle.com/cloud/free/) | ARM VM — enough for Postgres + API + web; best **always-free** option |
+| [Hetzner](https://www.hetzner.com/cloud) | Cheap paid VPS (~€4/mo) — reliable for always-on demos |
+| [DigitalOcean](https://www.digitalocean.com/) | Simple Docker droplets |
+
+```bash
+cp apps/api/.env.example .env.prod
+# fill in secrets, then:
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+This is the most reliable path because `isolated-vm`, WebSockets, and long-running Node processes work in a normal Linux container.
+
+### Managed split (less ops)
+
+Deploy components separately:
+
+| Component | Suggested hosts |
+|-----------|-----------------|
+| **PostgreSQL** | [Neon](https://neon.tech), [Supabase](https://supabase.com) |
+| **Redis** | [Upstash](https://upstash.com) |
+| **API** (NestJS) | [Render](https://render.com), [Railway](https://railway.app), [Fly.io](https://fly.io) |
+| **Web** (Angular static) | [Cloudflare Pages](https://pages.cloudflare.dev), [Netlify](https://netlify.com), [Vercel](https://vercel.com) |
+
+Set `DATABASE_URL`, `REDIS_URL`, `FRONTEND_URL`, and JWT secrets on the API service. Build the Angular app with the production API URL and deploy the `dist/` output to a static host.
+
+### Poor fit
+
+| Platform | Why |
+|----------|-----|
+| **Vercel / Netlify alone** | Good for the static frontend only — not for NestJS + WebSockets + `isolated-vm` |
+| **GitHub Pages** | Static only; no API or database |
+
+### Cost notes
+
+- **AI Mentor** requires `ANTHROPIC_API_KEY` in production (CLI mode is dev-only).
+- Free tiers on Render/Railway may **sleep** after inactivity (cold starts). Paid hobby tiers (~$5–7/mo per service) avoid that.
 
 ---
 
