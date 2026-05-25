@@ -27,7 +27,7 @@ An interactive, full-stack TypeScript learning platform — Monaco editor in the
 | XP & levelling system | ✅ XP on challenge completion, live WS push |
 | Admin challenge management | ✅ Full CRUD, draft/publish workflow |
 | Global leaderboard | ✅ |
-| AI Mentor | ✅ Claude Opus 4 — Anthropic API or Claude CLI (local dev) |
+| AI Mentor | ✅ Claude, Gemini, or OpenRouter — streaming SSE |
 | Rate limiting | ✅ `@nestjs/throttler` (per-endpoint limits) |
 | Health check | ✅ `GET /api/health` — Prisma `SELECT 1` probe |
 | Structured logging | ✅ `nestjs-pino` (JSON in prod, pretty in dev) |
@@ -60,7 +60,7 @@ TypeForge/
 | Backend | NestJS 11, Prisma 6, PostgreSQL, Redis, BullMQ, Socket.IO |
 | Auth | JWT access + refresh tokens, bcrypt, refresh token family tracking |
 | Sandbox | `isolated-vm` — V8 isolates for user code; no `require`, no `process` |
-| AI Mentor | Claude Opus 4 — `@anthropic-ai/sdk` or Claude CLI (dev) — streaming SSE |
+| AI Mentor | Claude / Gemini / OpenRouter — streaming SSE |
 | Logging | `nestjs-pino` — structured JSON (prod) / pretty-print (dev) |
 | Monitoring | Sentry (`@sentry/node`, `@sentry/angular`) — 5xx errors only |
 | DevOps | Docker Compose, Nginx, GitHub Actions CI |
@@ -182,14 +182,42 @@ Open **http://localhost:4200**, log in with the seeded admin account (or registe
 
 ## AI Mentor
 
-The mentor streams answers over SSE at `POST /api/ai-mentor/ask` (JWT required).
+The mentor streams answers over SSE at `POST /api/ai-mentor/ask` (JWT required). Set `AI_MENTOR_PROVIDER` to pick a backend (defaults to Anthropic):
 
-### Production / default: Anthropic API
+| Provider | `AI_MENTOR_PROVIDER` | Key env vars |
+|----------|----------------------|--------------|
+| **Anthropic** (default) | `api` or omit | `ANTHROPIC_API_KEY` |
+| **Google Gemini** | `gemini` | `GEMINI_API_KEY`, optional `GEMINI_MODEL` |
+| **OpenRouter** | `openrouter` | `OPENROUTER_API_KEY`, optional `OPENROUTER_MODEL` |
+| **Claude CLI** (local dev only) | `cli` | uses `claude auth login` |
+
+### Google Gemini (recommended free tier)
+
+Get a key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey):
+
+```env
+AI_MENTOR_PROVIDER=gemini
+GEMINI_API_KEY=your-key-here
+GEMINI_MODEL=gemini-2.0-flash
+```
+
+### Anthropic API
 
 Set an API key from [console.anthropic.com](https://console.anthropic.com):
 
 ```env
+AI_MENTOR_PROVIDER=api
 ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### OpenRouter (multi-model gateway)
+
+Route through [OpenRouter](https://openrouter.ai) to access Gemini, GPT-4o, Claude, and others with one key:
+
+```env
+AI_MENTOR_PROVIDER=openrouter
+OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_MODEL=google/gemini-2.0-flash-001
 ```
 
 ### Local dev only: Claude CLI
@@ -208,7 +236,7 @@ AI_MENTOR_PROVIDER=cli
 # CLAUDE_CLI_MODEL=
 ```
 
-`AI_MENTOR_PROVIDER=cli` is **ignored in production** — deploys always use the Anthropic API.
+`AI_MENTOR_PROVIDER=cli` is **ignored in production** — deploys fall back to the Anthropic API unless you set `gemini` or `openrouter`.
 
 ---
 
@@ -307,7 +335,9 @@ The production compose file:
 Required production env vars (the API will refuse to start without them):
 
 ```
-DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL, ANTHROPIC_API_KEY
+DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL
+
+Plus **one** AI Mentor key depending on provider (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, or `OPENROUTER_API_KEY`).
 ```
 
 ---
@@ -356,7 +386,7 @@ Set `DATABASE_URL`, `REDIS_URL`, `FRONTEND_URL`, and JWT secrets on the API serv
 
 ### Cost notes
 
-- **AI Mentor** requires `ANTHROPIC_API_KEY` in production (CLI mode is dev-only).
+- **AI Mentor** requires an API key for your chosen provider (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, or `OPENROUTER_API_KEY`). CLI mode is dev-only. Gemini offers a generous free tier at [Google AI Studio](https://aistudio.google.com/apikey).
 - Free tiers on Render/Railway may **sleep** after inactivity (cold starts). Paid hobby tiers (~$5–7/mo per service) avoid that.
 
 ---

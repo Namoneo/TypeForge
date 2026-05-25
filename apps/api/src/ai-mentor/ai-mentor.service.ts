@@ -9,6 +9,7 @@ import {
   buildMentorUserMessage,
 } from './ai-mentor.prompt';
 import { streamViaClaudeCli } from './claude-cli.stream';
+import { streamViaGemini } from './gemini.stream';
 import { streamViaOpenRouter } from './openrouter.stream';
 
 @Injectable()
@@ -18,6 +19,8 @@ export class AiMentorService {
   private readonly client: Anthropic | null;
   private readonly openRouterApiKey: string | null;
   private readonly openRouterModel: string;
+  private readonly geminiApiKey: string | null;
+  private readonly geminiModel: string;
 
   constructor(private config: ConfigService) {
     this.provider = resolveAiMentorProvider(config);
@@ -30,11 +33,15 @@ export class AiMentorService {
       this.client = null;
       this.openRouterApiKey = null;
       this.openRouterModel = '';
+      this.geminiApiKey = null;
+      this.geminiModel = '';
       return;
     }
 
     if (this.provider === 'openrouter') {
       this.client = null;
+      this.geminiApiKey = null;
+      this.geminiModel = '';
       this.openRouterApiKey =
         this.config.get<string>('OPENROUTER_API_KEY') ?? null;
       this.openRouterModel =
@@ -50,8 +57,25 @@ export class AiMentorService {
       return;
     }
 
+    if (this.provider === 'gemini') {
+      this.client = null;
+      this.openRouterApiKey = null;
+      this.openRouterModel = '';
+      this.geminiApiKey = this.config.get<string>('GEMINI_API_KEY') ?? null;
+      this.geminiModel =
+        this.config.get<string>('GEMINI_MODEL') ?? 'gemini-2.0-flash';
+      if (!this.geminiApiKey) {
+        this.logger.warn('GEMINI_API_KEY not set — AI Mentor disabled');
+      } else {
+        this.logger.log(`AI Mentor using Gemini model "${this.geminiModel}"`);
+      }
+      return;
+    }
+
     this.openRouterApiKey = null;
     this.openRouterModel = '';
+    this.geminiApiKey = null;
+    this.geminiModel = '';
     const apiKey = this.config.get<string>('ANTHROPIC_API_KEY');
     this.client = apiKey ? new Anthropic({ apiKey }) : null;
     if (!this.client) {
@@ -103,9 +127,31 @@ export class AiMentorService {
       return;
     }
 
+    if (this.provider === 'gemini') {
+      if (!this.geminiApiKey) {
+        res.write(
+          `data: ${JSON.stringify({ text: 'AI Mentor is not configured. Set GEMINI_API_KEY.' })}\n\n`,
+        );
+        res.write('data: [DONE]\n\n');
+        res.end();
+        return;
+      }
+
+      await streamViaGemini(
+        AI_MENTOR_SYSTEM_PROMPT,
+        userMessage,
+        res,
+        { apiKey: this.geminiApiKey, model: this.geminiModel },
+        this.logger,
+      );
+      res.write('data: [DONE]\n\n');
+      res.end();
+      return;
+    }
+
     if (!this.client) {
       res.write(
-        `data: ${JSON.stringify({ text: 'AI Mentor is not configured. Set ANTHROPIC_API_KEY or AI_MENTOR_PROVIDER=cli (dev only).' })}\n\n`,
+        `data: ${JSON.stringify({ text: 'AI Mentor is not configured. Set ANTHROPIC_API_KEY, GEMINI_API_KEY, or AI_MENTOR_PROVIDER=cli (dev only).' })}\n\n`,
       );
       res.write('data: [DONE]\n\n');
       res.end();
