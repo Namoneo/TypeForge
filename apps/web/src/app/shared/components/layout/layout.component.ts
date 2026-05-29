@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AppStore } from '../../../core/store/app.store';
@@ -11,18 +11,35 @@ import { RealtimeService } from '../../../core/services/realtime.service';
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="flex h-screen overflow-hidden" style="background: var(--bg-base)">
+
+      <!-- Mobile backdrop -->
+      @if (sidebarOpen()) {
+        <div class="fixed inset-0 bg-black/60 z-20 md:hidden"
+             (click)="sidebarOpen.set(false)"></div>
+      }
+
       <!-- Sidebar -->
-      <nav class="flex flex-col w-56 shrink-0 border-r" style="background: var(--bg-surface); border-color: var(--border)">
+      <nav class="flex flex-col w-56 shrink-0 border-r z-30
+                  fixed inset-y-0 left-0 transition-transform duration-200
+                  md:relative md:translate-x-0"
+           [class."-translate-x-full"]="!sidebarOpen()"
+           style="background: var(--bg-surface); border-color: var(--border)">
+
         <!-- Logo -->
         <div class="flex items-center gap-2 px-4 py-4 border-b" style="border-color: var(--border)">
           <span class="text-lg font-bold" style="color: var(--accent)">⚒</span>
           <span class="font-semibold tracking-tight" style="color: var(--text-primary)">TypeForge</span>
+          <!-- Close button (mobile only) -->
+          <button (click)="sidebarOpen.set(false)"
+                  class="ml-auto md:hidden text-lg leading-none"
+                  style="color: var(--text-muted)">✕</button>
         </div>
 
         <!-- Nav links -->
         <div class="flex flex-col gap-1 p-2 flex-1">
           @for (item of navItems; track item.path) {
             <a [routerLink]="item.path" routerLinkActive="nav-active"
+               (click)="sidebarOpen.set(false)"
                class="nav-item flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors">
               <span>{{ item.icon }}</span>
               <span>{{ item.label }}</span>
@@ -31,6 +48,7 @@ import { RealtimeService } from '../../../core/services/realtime.service';
           @if (store.isAdmin()) {
             <div class="mt-2 pt-2 border-t" style="border-color: var(--border)">
               <a routerLink="/admin/challenges" routerLinkActive="nav-active"
+                 (click)="sidebarOpen.set(false)"
                  class="nav-item flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors">
                 <span>⚙</span>
                 <span>Admin</span>
@@ -61,9 +79,20 @@ import { RealtimeService } from '../../../core/services/realtime.service';
       </nav>
 
       <!-- Main content -->
-      <main class="flex-1 overflow-auto">
-        <router-outlet />
-      </main>
+      <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+        <!-- Mobile top bar -->
+        <div class="flex items-center gap-3 px-4 py-3 border-b shrink-0 md:hidden"
+             style="background: var(--bg-surface); border-color: var(--border)">
+          <button (click)="sidebarOpen.set(true)"
+                  class="text-xl leading-none"
+                  style="color: var(--text-secondary)">☰</button>
+          <span class="font-semibold tracking-tight text-sm" style="color: var(--text-primary)">TypeForge</span>
+        </div>
+
+        <main class="flex-1 overflow-auto">
+          <router-outlet />
+        </main>
+      </div>
     </div>
   `,
   styles: [`
@@ -76,6 +105,8 @@ export class LayoutComponent implements OnInit {
   store = inject(AppStore);
   auth = inject(AuthService);
   private realtime = inject(RealtimeService);
+
+  sidebarOpen = signal(false);
 
   navItems = [
     { path: '/dashboard', icon: '⊞', label: 'Dashboard' },

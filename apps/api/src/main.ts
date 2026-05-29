@@ -65,8 +65,12 @@ async function bootstrap() {
     }),
   );
 
+  const mobileOrigins = ['capacitor://localhost', 'ionic://localhost', 'http://localhost'];
   app.enableCors({
-    origin: frontendUrl,
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? [frontendUrl, ...mobileOrigins]
+        : true,
     credentials: true,
   });
 

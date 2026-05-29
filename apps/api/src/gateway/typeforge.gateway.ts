@@ -13,9 +13,14 @@ import { ConfigService } from '@nestjs/config';
 import { Server, Socket } from 'socket.io';
 import { CompilerService } from '../compiler/compiler.service';
 
+const mobileOrigins = ['capacitor://localhost', 'ionic://localhost', 'http://localhost'];
+
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:4200',
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? [process.env.FRONTEND_URL ?? 'http://localhost:4200', ...mobileOrigins]
+        : true,
     credentials: true,
   },
   namespace: '/typeforge',

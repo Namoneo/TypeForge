@@ -48,6 +48,17 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "capacitor": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.capacitor.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -63,6 +74,9 @@
             },
             "development": {
               "buildTarget": "web:build:development"
+            },
+            "capacitor": {
+              "buildTarget": "web:build:capacitor"
             }
           },
           "defaultConfiguration": "development"

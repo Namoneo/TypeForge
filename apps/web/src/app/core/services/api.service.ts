@@ -1,12 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AppStore } from '../store/app.store';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http = inject(HttpClient);
   private store = inject(AppStore);
-  private readonly base = '/api';
+  private readonly base = environment.apiBase;
 
   private headers(): HttpHeaders {
     const token = this.store.token();

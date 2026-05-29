@@ -65,17 +65,17 @@ console.log('Hello from TypeForge!');
         </button>
       </div>
 
-      <!-- Main split pane -->
-      <div class="flex flex-1 overflow-hidden">
-        <!-- Editor (left) -->
-        <div class="flex-1 overflow-hidden">
+      <!-- Main split pane: side-by-side on md+, stacked on mobile -->
+      <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <!-- Editor -->
+        <div class="flex-1 min-h-0 overflow-hidden">
           <tf-monaco-editor #editor [value]="code" language="typescript"
             (valueChange)="code = $event">
           </tf-monaco-editor>
         </div>
 
-        <!-- Right panel (output or mentor) -->
-        <div class="w-80 shrink-0 border-l flex flex-col"
+        <!-- Output / AI Mentor panel -->
+        <div class="md:w-80 w-full md:shrink-0 border-t md:border-t-0 md:border-l flex flex-col"
              style="background: var(--bg-surface); border-color: var(--border)">
 
           @if (rightPanel() === 'output') {

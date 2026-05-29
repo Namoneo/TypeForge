@@ -14,7 +14,7 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
   standalone: true,
   imports: [CommonModule, MonacoEditorComponent, AiMentorPanelComponent],
   template: `
-    <div class="flex h-screen" style="background: var(--bg-base)">
+    <div class="flex flex-col h-screen" style="background: var(--bg-base)">
 
       <!-- Global error toast -->
       @if (toastMessage()) {
@@ -25,14 +25,34 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
       }
 
       @if (loadError()) {
-        <div class="flex flex-col items-center justify-center w-full gap-3"
+        <div class="flex flex-col items-center justify-center flex-1 gap-3"
              style="color: var(--text-muted)">
           <span style="color: var(--danger)">Failed to load challenge</span>
           <span class="text-xs">{{ loadError() }}</span>
         </div>
       } @else if (challenge(); as c) {
+
+        <!-- Mobile two-tab bar (hidden on md+) -->
+        <div class="flex md:hidden border-b shrink-0"
+             style="background: var(--bg-surface); border-color: var(--border)">
+          <button (click)="mobileTab.set('description')"
+                  class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
+                  [style.color]="mobileTab() === 'description' ? 'var(--accent)' : 'var(--text-muted)'"
+                  [style.borderBottom]="mobileTab() === 'description' ? '2px solid var(--accent)' : '2px solid transparent'">
+            Description
+          </button>
+          <button (click)="mobileTab.set('editor')"
+                  class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
+                  [style.color]="mobileTab() === 'editor' ? 'var(--accent)' : 'var(--text-muted)'"
+                  [style.borderBottom]="mobileTab() === 'editor' ? '2px solid var(--accent)' : '2px solid transparent'">
+            Editor
+          </button>
+        </div>
+
+        <div class="flex flex-1 overflow-hidden">
         <!-- Left: description + AI mentor -->
-        <div class="w-96 shrink-0 flex flex-col border-r"
+        <div [class.hidden]="mobileTab() !== 'description'"
+             class="flex flex-col border-r shrink-0 w-full md:w-96 md:flex overflow-hidden"
              style="background: var(--bg-surface); border-color: var(--border)">
 
           <!-- Tab bar -->
@@ -136,7 +156,8 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
         </div>
 
         <!-- Right: editor + results -->
-        <div class="flex-1 flex flex-col overflow-hidden">
+        <div [class.hidden]="mobileTab() === 'description'"
+             class="flex-1 flex flex-col overflow-hidden md:flex">
           <div class="flex items-center gap-2 px-4 py-2 border-b shrink-0"
                style="background: var(--bg-surface); border-color: var(--border)">
             <span class="text-sm font-medium truncate" style="color: var(--text-secondary)">{{ c.title }}</span>
@@ -209,8 +230,9 @@ import { DIFFICULTY_COLORS } from '@typeforge/shared/constants';
             </div>
           }
         </div>
+        </div> <!-- /flex flex-1 overflow-hidden (three-pane row) -->
       } @else if (loading()) {
-        <div class="flex items-center justify-center w-full" style="color: var(--text-muted)">
+        <div class="flex items-center justify-center flex-1" style="color: var(--text-muted)">
           Loading challenge…
         </div>
       }
@@ -231,6 +253,7 @@ export class ChallengeDetailComponent implements OnInit {
   result = signal<SubmitResult | null>(null);
   code = signal('');
   leftTab = signal<'description' | 'mentor'>('description');
+  mobileTab = signal<'description' | 'editor'>('editor');
   submitErrors = signal<Diagnostic[]>([]);
   toastMessage = signal<string | null>(null);
   revealedTipCount = signal(0);
@@ -289,6 +312,7 @@ export class ChallengeDetailComponent implements OnInit {
         }
         if (!r.passed) {
           this.leftTab.set('mentor');
+          this.mobileTab.set('description');
           this.aiHintTrigger.update(n => n + 1);
         }
       },

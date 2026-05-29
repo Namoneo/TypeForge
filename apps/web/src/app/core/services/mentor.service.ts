@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { AppStore } from '../store/app.store';
 import type { Diagnostic } from './compiler.service';
+import { environment } from '../../../environments/environment';
 
 export type MentorQueryType = 'explain_errors' | 'review_code' | 'hint' | 'explain_concept';
 
@@ -29,7 +30,7 @@ export class MentorService {
 
     const token = this.store.token();
     try {
-      const res = await fetch('/api/ai-mentor/ask', {
+      const res = await fetch(`${environment.apiBase}/ai-mentor/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

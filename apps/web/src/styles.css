@@ -41,3 +41,8 @@ html, body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* 44px minimum tap target on touch devices */
+@media (pointer: coarse) {
+  button, a, [role="button"] { min-height: 44px; }
+}

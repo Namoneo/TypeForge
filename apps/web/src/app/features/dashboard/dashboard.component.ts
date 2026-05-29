@@ -22,7 +22,7 @@ import { TRACKS, XP_PER_LEVEL } from '@typeforge/shared/constants';
       </div>
 
       <!-- Stats row -->
-      <div class="grid grid-cols-4 gap-4 mb-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         @for (stat of stats(); track stat.label) {
           <div class="rounded-xl p-4 border" style="background: var(--bg-surface); border-color: var(--border)">
             <div class="text-2xl font-bold" style="color: var(--text-primary)">{{ stat.value }}</div>
@@ -46,7 +46,7 @@ import { TRACKS, XP_PER_LEVEL } from '@typeforge/shared/constants';
 
       <!-- Tracks -->
       <h2 class="text-lg font-semibold mb-4" style="color: var(--text-primary)">Learning Tracks</h2>
-      <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         @for (track of tracks; track track.id) {
           <a [routerLink]="['/challenges']" [queryParams]="{ track: track.id }"
              class="rounded-xl p-4 border transition-colors cursor-pointer block"

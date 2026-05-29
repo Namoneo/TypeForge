@@ -1,6 +1,7 @@
 import { Injectable, inject, OnDestroy } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { AppStore } from '../store/app.store';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService implements OnDestroy {
@@ -13,7 +14,10 @@ export class RealtimeService implements OnDestroy {
     const token = this.store.token();
     if (!token) return;
 
-    this.socket = io('/typeforge', {
+    const wsUrl = environment.wsBase
+      ? `${environment.wsBase}/typeforge`
+      : '/typeforge';
+    this.socket = io(wsUrl, {
       auth: { token },
       transports: ['websocket'],
     });
